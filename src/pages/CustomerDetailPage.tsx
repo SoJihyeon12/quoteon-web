@@ -1,6 +1,14 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
-import { fetchCustomer, updateCustomer, type CreatedCustomer } from '../api/customers.ts'
+import { deactivateCustomer, fetchCustomer, updateCustomer, type CreatedCustomer } from '../api/customers.ts'
+import {
+  CUSTOMER_DEACTIVATE_CANCEL,
+  CUSTOMER_DEACTIVATE_CONFIRM,
+  CUSTOMER_DEACTIVATE_MESSAGE,
+  CUSTOMER_DEACTIVATE_TITLE,
+  canConfirmDeactivate,
+  deactivateOutcome,
+} from '../customerDeactivate.ts'
 import { CUSTOMER_TYPES, buildCreateCustomerBody } from '../customerForm.ts'
 import { customerDetailPath, customerEditPath, customerErrorMessage, displayPhone } from '../customerList.ts'
 import { navigate } from '../navigation.ts'
@@ -38,6 +46,10 @@ export default function CustomerDetailPage({
   const [memo, setMemo] = useState('')
   const [formMessage, setFormMessage] = useState('')
   const [saving, setSaving] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deactivating, setDeactivating] = useState(false)
+  const [deactivateMessage, setDeactivateMessage] = useState('')
+  const deactivateTitleId = useId()
 
   useEffect(() => {
     let cancelled = false
@@ -119,6 +131,38 @@ export default function CustomerDetailPage({
       return
     }
     navigate(customerDetailPath(customerId))
+  }
+
+  function openDeactivate() {
+    setDeactivateMessage('')
+    setConfirmOpen(true)
+  }
+
+  function cancelDeactivate() {
+    if (deactivating) {
+      return
+    }
+    setDeactivateMessage('')
+    setConfirmOpen(false)
+  }
+
+  async function confirmDeactivate() {
+    if (!canConfirmDeactivate(confirmOpen, deactivating)) {
+      return
+    }
+    setDeactivating(true)
+    setDeactivateMessage('')
+    const result = await deactivateCustomer(customerId)
+    if (redirectOnAccessFailure(result)) {
+      return
+    }
+    const outcome = deactivateOutcome(result)
+    if (outcome.path) {
+      navigate(outcome.path)
+      return
+    }
+    setDeactivating(false)
+    setDeactivateMessage(outcome.message)
   }
 
   const typeOptions =
@@ -206,6 +250,9 @@ export default function CustomerDetailPage({
               </div>
             </dl>
             <div className="customer-create-actions">
+              <button type="button" className="customer-deactivate" onClick={openDeactivate}>
+                고객 비활성화
+              </button>
               <button type="button" onClick={() => navigate('/customers')}>
                 닫기
               </button>
@@ -264,6 +311,42 @@ export default function CustomerDetailPage({
           </form>
         ) : null}
       </section>
+      {confirmOpen ? (
+        <div className="customer-modal">
+          <div
+            className="customer-dialog quote-confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={deactivateTitleId}
+          >
+            <h2 id={deactivateTitleId}>{CUSTOMER_DEACTIVATE_TITLE}</h2>
+            <p>{CUSTOMER_DEACTIVATE_MESSAGE}</p>
+            {deactivateMessage ? (
+              <p className="customer-create-message" role="alert">
+                {deactivateMessage}
+              </p>
+            ) : null}
+            <div className="quote-confirm-actions">
+              <button
+                type="button"
+                className="quote-confirm-blue"
+                disabled={deactivating}
+                onClick={cancelDeactivate}
+              >
+                {CUSTOMER_DEACTIVATE_CANCEL}
+              </button>
+              <button
+                type="button"
+                className="quote-confirm-red"
+                disabled={deactivating}
+                onClick={confirmDeactivate}
+              >
+                {deactivating ? '비활성화 중입니다.' : CUSTOMER_DEACTIVATE_CONFIRM}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

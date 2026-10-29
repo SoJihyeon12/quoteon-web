@@ -110,6 +110,10 @@
   font-weight: 650;
 }
 
+.quote-confirm-dialog .customer-create-message {
+  margin-top: 12px;
+}
+
 .customer-create-actions {
   display: flex;
   justify-content: flex-end;
@@ -163,4 +167,10 @@ a.customer-pick {
   border: 0;
   background: #1f6feb;
   color: #fff;
+}
+
+.customer-create-actions button.customer-deactivate {
+  margin-right: auto;
+  border-color: #b42318;
+  color: #b42318;
 }
