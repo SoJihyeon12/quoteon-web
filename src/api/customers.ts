@@ -16,9 +16,20 @@ export function fetchCustomers(page: number, keyword: string) {
   return apiRequest<CustomerPage>(customersPath(page, CUSTOMER_PAGE_SIZE, keyword))
 }
 
+export function fetchCustomer(customerId: number) {
+  return apiRequest<CreatedCustomer>(`/api/customers/${customerId}`)
+}
+
 export function createCustomer(body: CreateCustomerBody) {
   return apiRequest<CreatedCustomer>('/api/customers', {
     method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export function updateCustomer(customerId: number, body: CreateCustomerBody) {
+  return apiRequest<CreatedCustomer>(`/api/customers/${customerId}`, {
+    method: 'PUT',
     body: JSON.stringify(body),
   })
 }

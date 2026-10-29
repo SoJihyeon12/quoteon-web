@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AdminHomePage from './pages/AdminHomePage.tsx'
 import ConsultationPage from './pages/ConsultationPage.tsx'
+import CustomerDetailPage from './pages/CustomerDetailPage.tsx'
 import CustomerListPage from './pages/CustomerListPage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import PendingPage from './pages/PendingPage.tsx'
@@ -8,6 +9,7 @@ import QuoteListPage from './pages/QuoteListPage.tsx'
 import QuoteViewPage from './pages/QuoteViewPage.tsx'
 import RestrictedPage from './pages/RestrictedPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
+import { customerRecordRoute } from './customerList.ts'
 import { quoteIdFromViewPath } from './quoteList.ts'
 
 type Route = {
@@ -81,6 +83,17 @@ export default function App() {
 
   if (route.pathname === '/customers' || route.pathname === '/customers/new') {
     return <CustomerListPage key={route.pathname} creating={route.pathname === '/customers/new'} />
+  }
+
+  const customerRecord = customerRecordRoute(route.pathname)
+  if (customerRecord) {
+    return (
+      <CustomerDetailPage
+        key={`${customerRecord.customerId}-${customerRecord.editing}`}
+        customerId={customerRecord.customerId}
+        editing={customerRecord.editing}
+      />
+    )
   }
 
   if (route.pathname === '/consultation' && route.mode === 'new') {

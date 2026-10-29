@@ -101,3 +101,41 @@
   cursor: default;
   opacity: 0.55;
 }
+
+.customer-detail {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.customer-detail div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.customer-detail dt {
+  color: #5d6d80;
+  font-size: 14px;
+}
+
+.customer-detail dd {
+  margin: 0;
+  color: #12263f;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+}
+
+a.customer-pick {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.customer-create-actions button[type='button']:last-child,
+.customer-detail + .customer-create-actions button:last-child {
+  border: 0;
+  background: #1f6feb;
+  color: #fff;
+}

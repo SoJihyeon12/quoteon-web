@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
 import { createCustomer, fetchCustomers } from '../api/customers.ts'
 import { CUSTOMER_TYPES, buildCreateCustomerBody } from '../customerForm.ts'
-import { customerErrorMessage, displayPhone, type CustomerSummary } from '../customerList.ts'
+import { customerDetailPath, customerErrorMessage, displayPhone, type CustomerSummary } from '../customerList.ts'
 import { navigate } from '../navigation.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
 import './ConsultationPage.css'
@@ -205,6 +205,9 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
                   <th scope="col">고객명</th>
                   <th scope="col">연락처</th>
                   <th scope="col">구분</th>
+                  <th scope="col">
+                    <span className="visually-hidden">상세 보기</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -213,6 +216,11 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
                     <td>{item.name}</td>
                     <td>{displayPhone(item.phone)}</td>
                     <td>{item.customerType}</td>
+                    <td>
+                      <a className="customer-pick" href={customerDetailPath(item.id)}>
+                        상세 보기
+                      </a>
+                    </td>
                   </tr>
                 ))}
               </tbody>

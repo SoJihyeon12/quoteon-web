@@ -29,6 +29,28 @@ export function customersPath(page: number, size: number, keyword: string) {
   return `/api/customers?${params.toString()}`
 }
 
+export function customerDetailPath(customerId: number) {
+  return `/customers/${customerId}`
+}
+
+export function customerEditPath(customerId: number) {
+  return `/customers/${customerId}/edit`
+}
+
+export function customerRecordRoute(pathname: string) {
+  const editing = /^\/customers\/([1-9]\d*)\/edit$/.exec(pathname)
+  const detail = /^\/customers\/([1-9]\d*)$/.exec(pathname)
+  const match = editing ?? detail
+  if (!match) {
+    return null
+  }
+  const customerId = Number(match[1])
+  if (!Number.isSafeInteger(customerId)) {
+    return null
+  }
+  return { customerId, editing: Boolean(editing) }
+}
+
 export function displayPhone(value: string | null | undefined) {
   const trimmed = value?.trim()
   return trimmed ? trimmed : '-'

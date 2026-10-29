@@ -1,10 +1,8 @@
 export const CUSTOMER_TYPES = ['COMPANY', 'BUSINESS'] as const
 
-export type CustomerTypeCode = (typeof CUSTOMER_TYPES)[number]
-
 export type CreateCustomerBody = {
   name: string
-  customerType: CustomerTypeCode
+  customerType: string
   phone?: string
   email?: string
   address?: string
@@ -28,8 +26,12 @@ export function buildCreateCustomerBody(input: {
   if (name.length > 100) {
     return { ok: false, message: '고객명은 100자 이하로 입력해 주세요.' }
   }
-  if (!isCustomerType(input.customerType)) {
+  const customerType = input.customerType.trim()
+  if (!customerType) {
     return { ok: false, message: '고객 유형을 선택해 주세요.' }
+  }
+  if (customerType.length > 30) {
+    return { ok: false, message: '고객 유형은 30자 이하로 입력해 주세요.' }
   }
 
   const phone = input.phone.trim()
@@ -48,7 +50,7 @@ export function buildCreateCustomerBody(input: {
     return { ok: false, message: '주소는 500자 이하로 입력해 주세요.' }
   }
 
-  const body: CreateCustomerBody = { name, customerType: input.customerType }
+  const body: CreateCustomerBody = { name, customerType }
   if (phone) {
     body.phone = phone
   }
@@ -63,8 +65,4 @@ export function buildCreateCustomerBody(input: {
     body.memo = memo
   }
   return { ok: true, body }
-}
-
-function isCustomerType(value: string): value is CustomerTypeCode {
-  return CUSTOMER_TYPES.some((type) => type === value)
 }

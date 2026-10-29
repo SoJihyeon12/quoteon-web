@@ -77,4 +77,16 @@ test('고객명, 유형, 이메일 형식은 저장 전에 거른다', () => {
   if (!email.ok) {
     assert.equal(email.message, '이메일 형식을 확인해 주세요.')
   }
+  const kept = buildCreateCustomerBody({
+    name: '홍길동',
+    customerType: 'PARTNER',
+    phone: '',
+    email: '',
+    address: '',
+    memo: '',
+  })
+  assert.equal(kept.ok, true)
+  if (kept.ok) {
+    assert.equal(kept.body.customerType, 'PARTNER')
+  }
 })
