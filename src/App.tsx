@@ -9,25 +9,29 @@ import QuoteListPage from './pages/QuoteListPage.tsx'
 import QuoteViewPage from './pages/QuoteViewPage.tsx'
 import RestrictedPage from './pages/RestrictedPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
+import { consultationDialog } from './consultationDraft.ts'
 import { customerRecordRoute } from './customerList.ts'
 import { quoteIdFromViewPath } from './quoteList.ts'
 
 type Route = {
   pathname: string
   mode: string | null
+  dialog: ReturnType<typeof consultationDialog>
 }
 
 function readRoute(): Route {
   const rawPath = window.location.pathname
   if (rawPath === '/') {
-    return { pathname: '/login', mode: null }
+    return { pathname: '/login', mode: null, dialog: null }
   }
   if (rawPath === '/quotes/new') {
-    return { pathname: '/consultation', mode: 'new' }
+    return { pathname: '/consultation', mode: 'new', dialog: null }
   }
+  const params = new URLSearchParams(window.location.search)
   return {
     pathname: rawPath,
-    mode: new URLSearchParams(window.location.search).get('mode'),
+    mode: params.get('mode'),
+    dialog: consultationDialog(params.get('dialog')),
   }
 }
 
@@ -96,8 +100,8 @@ export default function App() {
     )
   }
 
-  if (route.pathname === '/consultation' && route.mode === 'new') {
-    return <ConsultationPage />
+  if (route.pathname === '/consultation') {
+    return <ConsultationPage dialog={route.dialog} />
   }
 
   return null

@@ -148,6 +148,7 @@
 
 .tool-button,
 .preview-button,
+.quote-cancel,
 .customer-search button,
 .dialog-close,
 .category-root,
@@ -780,6 +781,69 @@
 
 .preview-button-secondary:hover {
   background: #f3f7ff;
+}
+
+.quote-cancel {
+  align-self: flex-end;
+  border: 0;
+  background: transparent;
+  color: #b42318;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.quote-confirm-dialog {
+  position: relative;
+  width: min(100%, 440px);
+  text-align: center;
+}
+
+.quote-confirm-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.quote-confirm-dialog h2 {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.quote-confirm-dialog p {
+  margin: 16px 0 0;
+  color: #5d6d80;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.quote-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.quote-confirm-actions button {
+  min-width: 108px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-confirm-blue {
+  border: 1px solid #1f6feb;
+  color: #1f6feb;
+}
+
+.quote-confirm-red {
+  border: 1px solid #b42318;
+  color: #b42318;
 }
 
 .customer-row {

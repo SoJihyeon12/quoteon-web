@@ -9,6 +9,17 @@ import {
   displayPhone,
   type CustomerSummary,
 } from '../customerList.ts'
+import {
+  CANCEL_QUOTE_DIALOG,
+  CANCEL_QUOTE_MESSAGE,
+  CANCEL_QUOTE_TITLE,
+  NEW_CONSULTATION_DIALOG,
+  NEW_CONSULTATION_MESSAGE,
+  NEW_CONSULTATION_TITLE,
+  consultationDialogPath,
+  hasInProgressQuote,
+  type ConsultationDialog,
+} from '../consultationDraft.ts'
 import { navigate } from '../navigation.ts'
 import { buildCreateQuoteBody, priceQuote } from '../quoteForm.ts'
 import { quoteErrorMessage } from '../quoteList.ts'
@@ -53,9 +64,10 @@ function failureMessage(result: ApiResult<unknown>, fallback: string) {
   return fallback
 }
 
-export default function ConsultationPage() {
+export default function ConsultationPage({ dialog }: { dialog: ConsultationDialog | null }) {
   const titleId = useId()
   const popupTitleId = useId()
+  const confirmTitleId = useId()
   const [memberName, setMemberName] = useState('')
   const [sessionReady, setSessionReady] = useState(false)
   const [productKeyword, setProductKeyword] = useState('')
@@ -206,6 +218,47 @@ export default function ConsultationPage() {
     setCustomerTotalPages(0)
     setCustomerListState('loading')
     setCustomerNotice('')
+  }
+
+  const quoteDraft = {
+    customerSelected: selectedCustomer !== null,
+    lineCount: quoteLines.length,
+    memo,
+  }
+  const quoteInProgress = hasInProgressQuote(quoteDraft)
+  const visibleDialog = quoteInProgress ? dialog : null
+
+  useEffect(() => {
+    if (dialog && !quoteInProgress) {
+      navigate(consultationDialogPath(window.location.search, null))
+    }
+  }, [dialog, quoteInProgress])
+
+  function openQuoteDialog(next: ConsultationDialog) {
+    navigate(consultationDialogPath(window.location.search, next))
+  }
+
+  function closeQuoteDialog() {
+    navigate(consultationDialogPath(window.location.search, null))
+  }
+
+  function requestNewConsultation() {
+    if (!hasInProgressQuote(quoteDraft)) {
+      resetQuote()
+      return
+    }
+    openQuoteDialog(NEW_CONSULTATION_DIALOG)
+  }
+
+  function requestCancelQuote() {
+    if (!hasInProgressQuote(quoteDraft)) {
+      return
+    }
+    openQuoteDialog(CANCEL_QUOTE_DIALOG)
+  }
+
+  function confirmQuoteDialog() {
+    resetQuote()
   }
 
   function openCustomerPopup() {
@@ -441,7 +494,7 @@ export default function ConsultationPage() {
           </svg>
           즐겨찾기
         </button>
-        <button type="button" className="tool-button tool-button-primary" onClick={resetQuote}>
+        <button type="button" className="tool-button tool-button-primary" onClick={requestNewConsultation}>
           + 새 상담
         </button>
       </div>
@@ -619,8 +672,50 @@ export default function ConsultationPage() {
           <button type="button" className="preview-button preview-button-secondary" onClick={handlePreview}>
             견적서 미리보기
           </button>
+          {quoteInProgress ? (
+            <button type="button" className="quote-cancel" onClick={requestCancelQuote}>
+              견적 취소
+            </button>
+          ) : null}
         </aside>
       </div>
+
+      {visibleDialog ? (
+        <div className="customer-modal">
+          <div
+            className="customer-dialog quote-confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={confirmTitleId}
+          >
+            {visibleDialog === NEW_CONSULTATION_DIALOG ? (
+              <button type="button" className="dialog-close quote-confirm-close" aria-label="취소" onClick={closeQuoteDialog}>
+                ×
+              </button>
+            ) : null}
+            <h2 id={confirmTitleId}>
+              {visibleDialog === CANCEL_QUOTE_DIALOG ? CANCEL_QUOTE_TITLE : NEW_CONSULTATION_TITLE}
+            </h2>
+            <p>{visibleDialog === CANCEL_QUOTE_DIALOG ? CANCEL_QUOTE_MESSAGE : NEW_CONSULTATION_MESSAGE}</p>
+            <div className="quote-confirm-actions">
+              <button
+                type="button"
+                className={visibleDialog === CANCEL_QUOTE_DIALOG ? 'quote-confirm-blue' : 'quote-confirm-red'}
+                onClick={closeQuoteDialog}
+              >
+                {visibleDialog === CANCEL_QUOTE_DIALOG ? '돌아가기' : '취소'}
+              </button>
+              <button
+                type="button"
+                className={visibleDialog === CANCEL_QUOTE_DIALOG ? 'quote-confirm-red' : 'quote-confirm-blue'}
+                onClick={confirmQuoteDialog}
+              >
+                {visibleDialog === CANCEL_QUOTE_DIALOG ? '견적 취소' : '확인'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {customerPopupOpen ? (
         <div className="customer-modal">
