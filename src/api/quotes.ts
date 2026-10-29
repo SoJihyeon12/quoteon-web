@@ -15,8 +15,26 @@ export type CreatedQuote = {
   createdAt: string
 }
 
+export type QuoteItem = {
+  id: number
+  productId: number
+  productName: string
+  productCode: string
+  salePrice: number
+  quantity: number
+  amount: number
+}
+
+export type QuoteDetail = CreatedQuote & {
+  items: QuoteItem[]
+}
+
 export function fetchQuotes(page: number) {
   return apiRequest<QuotePage>(quotesPath(page, QUOTE_PAGE_SIZE))
+}
+
+export function fetchQuote(quoteId: number) {
+  return apiRequest<QuoteDetail>(`/api/quotes/${quoteId}`)
 }
 
 export function createQuote(body: CreateQuoteBody) {

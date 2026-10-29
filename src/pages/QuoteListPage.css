@@ -112,6 +112,30 @@
   opacity: 0.55;
 }
 
+.quote-row {
+  cursor: pointer;
+}
+
+.quote-row:hover td {
+  background: #f8fbff;
+}
+
+.quote-view-button {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #1f6feb;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f6feb;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-view-button:hover {
+  background: #eef4ff;
+}
+
 @media (max-width: 720px) {
   .quote-panel {
     padding: 20px 16px 32px;

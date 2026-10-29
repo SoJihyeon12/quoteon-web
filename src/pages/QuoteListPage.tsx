@@ -5,6 +5,7 @@ import {
   formatAmount,
   quoteErrorMessage,
   quoteStatusLabel,
+  quoteViewPath,
   type QuoteSummary,
 } from '../quoteList.ts'
 import { navigate } from '../navigation.ts'
@@ -172,11 +173,14 @@ export default function QuoteListPage() {
                   <th scope="col" className="quote-amount">
                     합계 금액
                   </th>
+                  <th scope="col">
+                    <span className="visually-hidden">견적서 확인</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className="quote-row" onClick={() => navigate(quoteViewPath(item.id))}>
                     <td>{item.quoteNumber}</td>
                     <td>{item.customerName}</td>
                     <td>{item.quoteDate}</td>
@@ -184,6 +188,18 @@ export default function QuoteListPage() {
                     <td className="quote-amount">{formatAmount(item.supplyAmount)}</td>
                     <td className="quote-amount">{formatAmount(item.vatAmount)}</td>
                     <td className="quote-amount">{formatAmount(item.totalAmount)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="quote-view-button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          navigate(quoteViewPath(item.id))
+                        }}
+                      >
+                        견적서 확인
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

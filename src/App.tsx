@@ -4,8 +4,10 @@ import ConsultationPage from './pages/ConsultationPage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import PendingPage from './pages/PendingPage.tsx'
 import QuoteListPage from './pages/QuoteListPage.tsx'
+import QuoteViewPage from './pages/QuoteViewPage.tsx'
 import RestrictedPage from './pages/RestrictedPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
+import { quoteIdFromViewPath } from './quoteList.ts'
 
 type Route = {
   pathname: string
@@ -69,6 +71,11 @@ export default function App() {
 
   if (route.pathname === '/quotes/my') {
     return <QuoteListPage />
+  }
+
+  const quoteId = quoteIdFromViewPath(route.pathname)
+  if (quoteId !== null) {
+    return <QuoteViewPage key={quoteId} quoteId={quoteId} />
   }
 
   if (route.pathname === '/consultation' && route.mode === 'new') {

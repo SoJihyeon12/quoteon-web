@@ -29,6 +29,19 @@ const STATUS_LABEL: Record<string, string> = {
   SENT: '발송 완료',
 }
 
+export function quoteViewPath(quoteId: number) {
+  return `/quotes/${quoteId}/view`
+}
+
+export function quoteIdFromViewPath(pathname: string) {
+  const match = /^\/quotes\/([1-9]\d*)\/view$/.exec(pathname)
+  if (!match) {
+    return null
+  }
+  const quoteId = Number(match[1])
+  return Number.isSafeInteger(quoteId) ? quoteId : null
+}
+
 export function quotesPath(page: number, size: number) {
   const params = new URLSearchParams()
   params.set('page', String(page))
