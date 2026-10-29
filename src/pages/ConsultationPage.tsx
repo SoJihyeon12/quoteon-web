@@ -21,12 +21,12 @@ import {
   type ConsultationDialog,
 } from '../consultationDraft.ts'
 import { navigate } from '../navigation.ts'
+import { clearQuotePreviewHistory, openQuotePreview, quotePreviewFromHistory } from '../quotePreview.ts'
 import { buildCreateQuoteBody, priceQuote } from '../quoteForm.ts'
 import { quoteErrorMessage } from '../quoteList.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
 import './ConsultationPage.css'
 
-const PREVIEW_UNAVAILABLE = '견적 API가 연결되지 않아 견적서 미리보기로 이동할 수 없습니다.'
 const FAVORITES_UNAVAILABLE = '즐겨찾기 API가 연결되지 않아 즐겨찾기 제품을 불러올 수 없습니다.'
 
 function todayLabel() {
@@ -78,12 +78,13 @@ export default function ConsultationPage({ dialog }: { dialog: ConsultationDialo
   const [products, setProducts] = useState<Product[]>([])
   const [productNotice, setProductNotice] = useState('제품 목록을 확인하는 중입니다.')
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({})
-  const [memo, setMemo] = useState('')
-  const [writtenOn, setWrittenOn] = useState(todayLabel)
+  const [restoredDraft] = useState(() => quotePreviewFromHistory(window.history.state))
+  const [memo, setMemo] = useState(() => restoredDraft?.memo ?? '')
+  const [writtenOn, setWrittenOn] = useState(() => restoredDraft?.writtenOn || todayLabel())
   const [quoteNotice, setQuoteNotice] = useState('')
-  const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([])
+  const [quoteLines, setQuoteLines] = useState<QuoteLine[]>(() => restoredDraft?.lines ?? [])
   const [saving, setSaving] = useState(false)
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSummary | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSummary | null>(() => restoredDraft?.customer ?? null)
   const [customerPopupOpen, setCustomerPopupOpen] = useState(false)
   const [customerKeyword, setCustomerKeyword] = useState('')
   const [submittedKeyword, setSubmittedKeyword] = useState('')
@@ -218,6 +219,7 @@ export default function ConsultationPage({ dialog }: { dialog: ConsultationDialo
     setCustomerTotalPages(0)
     setCustomerListState('loading')
     setCustomerNotice('')
+    clearQuotePreviewHistory()
   }
 
   const quoteDraft = {
@@ -366,7 +368,12 @@ export default function ConsultationPage({ dialog }: { dialog: ConsultationDialo
   }
 
   function handlePreview() {
-    setQuoteNotice(PREVIEW_UNAVAILABLE)
+    openQuotePreview({
+      customer: selectedCustomer,
+      writtenOn,
+      memo,
+      lines: quoteLines,
+    })
   }
 
   function handleCustomerSearch(event: FormEvent<HTMLFormElement>) {

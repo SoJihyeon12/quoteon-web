@@ -6,6 +6,7 @@ import CustomerListPage from './pages/CustomerListPage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import PendingPage from './pages/PendingPage.tsx'
 import QuoteListPage from './pages/QuoteListPage.tsx'
+import QuotePreviewPage from './pages/QuotePreviewPage.tsx'
 import QuoteViewPage from './pages/QuoteViewPage.tsx'
 import RestrictedPage from './pages/RestrictedPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
@@ -78,6 +79,10 @@ export default function App() {
 
   if (route.pathname === '/quotes/my') {
     return <QuoteListPage />
+  }
+
+  if (route.pathname === '/quotes/preview') {
+    return <QuotePreviewPage />
   }
 
   const quoteId = quoteIdFromViewPath(route.pathname)
