@@ -3,6 +3,7 @@ import AdminHomePage from './pages/AdminHomePage.tsx'
 import ConsultationPage from './pages/ConsultationPage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import PendingPage from './pages/PendingPage.tsx'
+import QuoteFormPage from './pages/QuoteFormPage.tsx'
 import QuoteListPage from './pages/QuoteListPage.tsx'
 import RestrictedPage from './pages/RestrictedPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
@@ -53,6 +54,10 @@ export default function App() {
 
   if (route.pathname === '/quotes/my') {
     return <QuoteListPage />
+  }
+
+  if (route.pathname === '/quotes/new') {
+    return <QuoteFormPage />
   }
 
   if (route.pathname === '/consultation' && route.mode === 'new') {
