@@ -1,0 +1,148 @@
+.quote-panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.quote-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.quote-heading h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.quote-create {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: #1f6feb;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.quote-create:hover {
+  background: #1858c7;
+}
+
+.quote-table-wrap {
+  margin-top: 20px;
+  overflow-x: auto;
+  border: 1px solid #e6edf5;
+  border-radius: 12px;
+}
+
+.quote-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.quote-table th,
+.quote-table td {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.quote-table th {
+  background: #f7f9fc;
+  color: #5d6d80;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quote-table td {
+  border-top: 1px solid #e6edf5;
+  color: #12263f;
+}
+
+.quote-table th.quote-amount,
+.quote-table td.quote-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-empty {
+  margin-top: 20px;
+  padding: 48px 20px;
+  border: 1px dashed #d7e0ea;
+  border-radius: 16px;
+  color: #5d6d80;
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.quote-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  color: #8b9aab;
+  font-size: 13px;
+}
+
+.quote-pager button {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  background: #fff;
+  color: #5d6d80;
+  font: inherit;
+  cursor: pointer;
+}
+
+.quote-pager button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.quote-row {
+  cursor: pointer;
+}
+
+.quote-row:hover td {
+  background: #f8fbff;
+}
+
+.quote-view-button {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #1f6feb;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f6feb;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-view-button:hover {
+  background: #eef4ff;
+}
+
+@media (max-width: 720px) {
+  .quote-panel {
+    padding: 20px 16px 32px;
+  }
+
+  .quote-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

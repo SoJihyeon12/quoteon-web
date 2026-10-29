@@ -148,6 +148,7 @@
 
 .tool-button,
 .preview-button,
+.quote-cancel,
 .customer-search button,
 .dialog-close,
 .category-root,
@@ -661,4 +662,215 @@
   .tool-button {
     flex: 1;
   }
+}
+
+.product-add {
+  height: 36px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: #1f6feb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.product-add:hover {
+  background: #1858c7;
+}
+
+.quote-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quote-line {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e6edf5;
+}
+
+.quote-line-top,
+.quote-line-qty,
+.quote-amounts p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quote-line-top p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+}
+
+.quote-line-top strong,
+.quote-line-qty strong {
+  color: #12263f;
+  font-size: 14px;
+}
+
+.quote-line-top span,
+.quote-line-qty label,
+.quote-amounts span {
+  color: #5d6d80;
+  font-size: 13px;
+}
+
+.quote-line-qty label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quote-line-qty input {
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  color: #12263f;
+  font: inherit;
+}
+
+.quote-line-qty input {
+  width: 72px;
+}
+
+.quote-line-remove {
+  border: 0;
+  background: transparent;
+  color: #5d6d80;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-amounts {
+  display: grid;
+  gap: 6px;
+}
+
+.quote-amounts p {
+  margin: 0;
+}
+
+.quote-amounts strong {
+  color: #12263f;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.preview-button-secondary {
+  background: #fff;
+  color: #1f6feb;
+  border: 1px solid #1f6feb;
+}
+
+.preview-button-secondary:hover {
+  background: #f3f7ff;
+}
+
+.quote-cancel {
+  align-self: flex-end;
+  border: 0;
+  background: transparent;
+  color: #b42318;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.quote-confirm-dialog {
+  position: relative;
+  width: min(100%, 440px);
+  text-align: center;
+}
+
+.quote-confirm-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.quote-confirm-dialog h2 {
+  margin: 8px 0 0;
+  font-size: 18px;
+}
+
+.quote-confirm-dialog p {
+  margin: 16px 0 0;
+  color: #5d6d80;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.quote-confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.quote-confirm-actions button {
+  min-width: 108px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-confirm-actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.quote-confirm-blue {
+  border: 1px solid #1f6feb;
+  color: #1f6feb;
+}
+
+.quote-confirm-red {
+  border: 1px solid #b42318;
+  color: #b42318;
+}
+
+.customer-row {
+  cursor: pointer;
+}
+
+.customer-row:hover td {
+  background: #f8fbff;
+}
+
+.customer-pick {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #1f6feb;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f6feb;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-pick:hover {
+  background: #eef4ff;
 }

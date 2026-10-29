@@ -1,0 +1,83 @@
+.quote-preview-page {
+  display: flex;
+  justify-content: center;
+  padding: 28px 20px 40px;
+}
+
+.quote-preview-sheet {
+  width: min(100%, 760px);
+  padding: 20px 24px 28px;
+  border: 1px solid #d7e0ea;
+  background: #fff;
+}
+
+.quote-preview-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.quote-preview-toolbar button {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  background: #fff;
+  color: #24364c;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-preview-toolbar button:last-child {
+  width: 36px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.quote-preview-heading,
+.quote-preview-parties {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.quote-preview-heading h1,
+.quote-preview-heading p,
+.quote-preview-parties {
+  margin: 0;
+}
+
+.quote-preview-heading h1 {
+  font-size: 20px;
+}
+
+.quote-preview-heading p,
+.quote-preview-parties div {
+  display: flex;
+  gap: 12px;
+  color: #12263f;
+  font-size: 14px;
+}
+
+.quote-preview-heading span,
+.quote-preview-parties dt {
+  color: #5d6d80;
+  font-weight: 650;
+}
+
+.quote-preview-parties dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.quote-preview-sheet .quote-table-wrap {
+  margin-top: 20px;
+}
+
+.quote-preview-sheet .quote-view-summary {
+  margin-left: auto;
+}

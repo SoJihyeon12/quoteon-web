@@ -1,0 +1,68 @@
+export const CUSTOMER_TYPES = ['개인', '기업'] as const
+
+export type CreateCustomerBody = {
+  name: string
+  customerType: string
+  phone?: string
+  email?: string
+  address?: string
+  memo?: string
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export function buildCreateCustomerBody(input: {
+  name: string
+  customerType: string
+  phone: string
+  email: string
+  address: string
+  memo: string
+}): { ok: true; body: CreateCustomerBody } | { ok: false; message: string } {
+  const name = input.name.trim()
+  if (!name) {
+    return { ok: false, message: '고객명을 입력해 주세요.' }
+  }
+  if (name.length > 100) {
+    return { ok: false, message: '고객명은 100자 이하로 입력해 주세요.' }
+  }
+  const customerType = input.customerType.trim()
+  if (!customerType) {
+    return { ok: false, message: '고객 유형을 선택해 주세요.' }
+  }
+  if (!CUSTOMER_TYPES.some((type) => type === customerType)) {
+    return { ok: false, message: '고객 유형은 개인 또는 기업만 선택할 수 있습니다.' }
+  }
+
+  const phone = input.phone.trim()
+  if (phone.length > 20) {
+    return { ok: false, message: '연락처는 20자 이하로 입력해 주세요.' }
+  }
+  const email = input.email.trim()
+  if (email.length > 255) {
+    return { ok: false, message: '이메일은 255자 이하로 입력해 주세요.' }
+  }
+  if (email && !EMAIL_PATTERN.test(email)) {
+    return { ok: false, message: '이메일 형식을 확인해 주세요.' }
+  }
+  const address = input.address.trim()
+  if (address.length > 500) {
+    return { ok: false, message: '주소는 500자 이하로 입력해 주세요.' }
+  }
+
+  const body: CreateCustomerBody = { name, customerType }
+  if (phone) {
+    body.phone = phone
+  }
+  if (email) {
+    body.email = email
+  }
+  if (address) {
+    body.address = address
+  }
+  const memo = input.memo.trim()
+  if (memo) {
+    body.memo = memo
+  }
+  return { ok: true, body }
+}
