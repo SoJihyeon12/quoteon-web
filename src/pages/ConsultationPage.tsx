@@ -1,15 +1,20 @@
 import { useEffect, useId, useState, type FormEvent, type MouseEvent } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
 import { fetchCategories, fetchProducts } from '../api/catalog.ts'
+import { fetchCustomers } from '../api/customers.ts'
 import { createQuote } from '../api/quotes.ts'
 import type { ApiResult, Category, Product } from '../api/types.ts'
+import {
+  customerErrorMessage,
+  displayPhone,
+  type CustomerSummary,
+} from '../customerList.ts'
 import { navigate } from '../navigation.ts'
 import { buildCreateQuoteBody, priceQuote } from '../quoteForm.ts'
 import { quoteErrorMessage } from '../quoteList.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
 import './ConsultationPage.css'
 
-const CUSTOMER_UNAVAILABLE = '고객 API가 연결되지 않아 고객을 선택할 수 없습니다.'
 const PREVIEW_UNAVAILABLE = '견적 API가 연결되지 않아 견적서 미리보기로 이동할 수 없습니다.'
 const FAVORITES_UNAVAILABLE = '즐겨찾기 API가 연결되지 않아 즐겨찾기 제품을 불러올 수 없습니다.'
 
@@ -66,12 +71,16 @@ export default function ConsultationPage() {
   const [quoteNotice, setQuoteNotice] = useState('')
   const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([])
   const [saving, setSaving] = useState(false)
-  const [selectedCustomerId, setSelectedCustomerId] = useState('')
-  const [customerIdDraft, setCustomerIdDraft] = useState('')
-  const [customerIdMessage, setCustomerIdMessage] = useState('')
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerSummary | null>(null)
   const [customerPopupOpen, setCustomerPopupOpen] = useState(false)
   const [customerKeyword, setCustomerKeyword] = useState('')
-  const [customerNotice, setCustomerNotice] = useState(CUSTOMER_UNAVAILABLE)
+  const [submittedKeyword, setSubmittedKeyword] = useState('')
+  const [customerPage, setCustomerPage] = useState(0)
+  const [customerReloadKey, setCustomerReloadKey] = useState(0)
+  const [customers, setCustomers] = useState<CustomerSummary[]>([])
+  const [customerTotalPages, setCustomerTotalPages] = useState(0)
+  const [customerListState, setCustomerListState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
+  const [customerNotice, setCustomerNotice] = useState('')
   const [menuNotice, setMenuNotice] = useState('')
 
   useEffect(() => {
@@ -148,35 +157,65 @@ export default function ConsultationPage() {
     }
   }, [customerPopupOpen])
 
+  useEffect(() => {
+    if (!customerPopupOpen || !sessionReady) {
+      return
+    }
+    let cancelled = false
+    fetchCustomers(customerPage, submittedKeyword).then((result) => {
+      if (cancelled) {
+        return
+      }
+      if (redirectOnAccessFailure(result)) {
+        return
+      }
+      if (!result.ok || !Array.isArray(result.data.items)) {
+        setCustomers([])
+        setCustomerTotalPages(0)
+        setCustomerListState('error')
+        setCustomerNotice(customerErrorMessage(result, '고객 목록을 불러오지 못했습니다.'))
+        return
+      }
+      if (customerPage > 0 && result.data.totalPages > 0 && customerPage >= result.data.totalPages) {
+        setCustomerListState('loading')
+        setCustomerPage(result.data.totalPages - 1)
+        return
+      }
+      setCustomers(result.data.items)
+      setCustomerTotalPages(result.data.totalPages)
+      setCustomerNotice('')
+      setCustomerListState(result.data.items.length === 0 ? 'empty' : 'ready')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [customerPopupOpen, sessionReady, customerPage, submittedKeyword, customerReloadKey])
+
   function resetQuote() {
     setMemo('')
     setWrittenOn(todayLabel())
     setQuoteNotice('')
     setQuoteLines([])
     setSaving(false)
-    setSelectedCustomerId('')
-    setCustomerIdDraft('')
-    setCustomerIdMessage('')
+    setSelectedCustomer(null)
     setCustomerPopupOpen(false)
     setCustomerKeyword('')
-    setCustomerNotice(CUSTOMER_UNAVAILABLE)
+    setSubmittedKeyword('')
+    setCustomerPage(0)
+    setCustomers([])
+    setCustomerTotalPages(0)
+    setCustomerListState('loading')
+    setCustomerNotice('')
   }
 
   function openCustomerPopup() {
-    setCustomerIdDraft(selectedCustomerId)
-    setCustomerIdMessage('')
+    setCustomerListState('loading')
     setCustomerPopupOpen(true)
   }
 
-  function handleSelectCustomer(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const trimmed = customerIdDraft.trim()
-    if (!/^[1-9]\d*$/.test(trimmed) || !Number.isSafeInteger(Number(trimmed))) {
-      setCustomerIdMessage('고객을 선택해 주세요.')
-      return
-    }
-    setSelectedCustomerId(trimmed)
-    setCustomerIdMessage('')
+  function chooseCustomer(customer: CustomerSummary) {
+    setSelectedCustomer(customer)
+    setQuoteNotice('')
     setCustomerPopupOpen(false)
   }
 
@@ -205,7 +244,7 @@ export default function ConsultationPage() {
 
   async function handleSaveQuote() {
     const built = buildCreateQuoteBody({
-      customerId: selectedCustomerId,
+      customerId: selectedCustomer ? String(selectedCustomer.id) : '',
       quoteDate: writtenOn,
       items: quoteLines.map((line) => ({ productId: line.productId, quantity: line.quantity })),
     })
@@ -284,12 +323,10 @@ export default function ConsultationPage() {
 
   function handleCustomerSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!customerKeyword.trim()) {
-      setCustomerNotice('고객명 또는 연락처를 입력해 주세요.')
-      return
-    }
-
-    setCustomerNotice('고객 API가 연결되지 않아 고객명 또는 연락처로 검색할 수 없습니다.')
+    setSubmittedKeyword(customerKeyword)
+    setCustomerPage(0)
+    setCustomerListState('loading')
+    setCustomerReloadKey((current) => current + 1)
   }
 
   const pricedLines = quoteLines.flatMap((line) =>
@@ -491,7 +528,7 @@ export default function ConsultationPage() {
                 />
               </svg>
             </span>
-            {selectedCustomerId ? `고객 번호 ${selectedCustomerId}` : '고객을 선택하세요.'}
+            {selectedCustomer ? selectedCustomer.name : '고객을 선택하세요.'}
           </button>
 
           <div className="quote-heading">
@@ -602,7 +639,7 @@ export default function ConsultationPage() {
           >
             <div className="customer-dialog-head">
               <p id={popupTitleId}>
-                선택한 고객: <strong>{selectedCustomerId || '없음'}</strong>
+                선택한 고객: <strong>{selectedCustomer?.name || '없음'}</strong>
               </p>
               <button
                 type="button"
@@ -636,41 +673,76 @@ export default function ConsultationPage() {
                     <th scope="col">고객명</th>
                     <th scope="col">연락처</th>
                     <th scope="col">구분</th>
+                    <th scope="col">
+                      <span className="visually-hidden">선택</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td colSpan={3}>{customerNotice}</td>
-                  </tr>
+                  {customerListState === 'loading' ? (
+                    <tr>
+                      <td colSpan={4}>고객 목록을 불러오는 중입니다.</td>
+                    </tr>
+                  ) : null}
+                  {customerListState === 'empty' ? (
+                    <tr>
+                      <td colSpan={4}>
+                        {submittedKeyword.trim() ? '검색 결과가 없습니다.' : '선택할 수 있는 고객이 없습니다.'}
+                      </td>
+                    </tr>
+                  ) : null}
+                  {customerListState === 'error' ? (
+                    <tr>
+                      <td colSpan={4}>{customerNotice || '고객 목록을 불러오지 못했습니다.'}</td>
+                    </tr>
+                  ) : null}
+                  {customerListState === 'ready'
+                    ? customers.map((customer) => (
+                        <tr key={customer.id} className="customer-row" onClick={() => chooseCustomer(customer)}>
+                          <td>{customer.name}</td>
+                          <td>{displayPhone(customer.phone)}</td>
+                          <td>{customer.customerType}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="customer-pick"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                chooseCustomer(customer)
+                              }}
+                            >
+                              선택
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    : null}
                 </tbody>
               </table>
             </div>
 
-            <form className="customer-id-form" onSubmit={handleSelectCustomer}>
-              <label htmlFor="customer-id">고객 번호</label>
-              <input
-                id="customer-id"
-                inputMode="numeric"
-                value={customerIdDraft}
-                onChange={(event) => setCustomerIdDraft(event.target.value)}
-              />
-              <button type="submit">선택</button>
-            </form>
-            <p className="panel-note">
-              고객 목록 조회 API가 없어 고객명으로 고를 수 없습니다. 본인 고객 번호를 입력한 뒤 선택해 주세요.
-            </p>
-            {customerIdMessage ? (
-              <p className="panel-note panel-note-alert" role="alert">
-                {customerIdMessage}
-              </p>
-            ) : null}
-
             <div className="pager" aria-label="고객 목록 페이지">
-              <button type="button" disabled>
+              <button
+                type="button"
+                disabled={customerListState === 'loading' || customerPage <= 0}
+                onClick={() => {
+                  setCustomerListState('loading')
+                  setCustomerPage((current) => current - 1)
+                }}
+              >
                 이전
               </button>
-              <span>표시할 페이지가 없습니다.</span>
-              <button type="button" disabled>
+              <span>
+                {customerTotalPages === 0 ? '표시할 페이지가 없습니다.' : `${customerPage + 1} / ${customerTotalPages}`}
+              </span>
+              <button
+                type="button"
+                disabled={customerListState === 'loading' || customerTotalPages === 0 || customerPage + 1 >= customerTotalPages}
+                onClick={() => {
+                  setCustomerListState('loading')
+                  setCustomerPage((current) => current + 1)
+                }}
+              >
                 다음
               </button>
             </div>
