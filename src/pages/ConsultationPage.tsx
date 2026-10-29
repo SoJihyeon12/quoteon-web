@@ -1,11 +1,12 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
 import { fetchCategories, fetchProducts } from '../api/catalog.ts'
-import { fetchCustomers } from '../api/customers.ts'
+import { fetchCustomer, fetchCustomers } from '../api/customers.ts'
 import { createQuote } from '../api/quotes.ts'
 import type { ApiResult, Category, Product } from '../api/types.ts'
 import {
   customerErrorMessage,
+  customerSummaryFromDetail,
   displayPhone,
   type CustomerSummary,
 } from '../customerList.ts'
@@ -64,7 +65,13 @@ function failureMessage(result: ApiResult<unknown>, fallback: string) {
   return fallback
 }
 
-export default function ConsultationPage({ dialog }: { dialog: ConsultationDialog | null }) {
+export default function ConsultationPage({
+  dialog,
+  customerId,
+}: {
+  dialog: ConsultationDialog | null
+  customerId: number | null
+}) {
   const titleId = useId()
   const popupTitleId = useId()
   const confirmTitleId = useId()
@@ -148,6 +155,29 @@ export default function ConsultationPage({ dialog }: { dialog: ConsultationDialo
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (!sessionReady || customerId === null) {
+      return
+    }
+    let cancelled = false
+    fetchCustomer(customerId).then((result) => {
+      if (cancelled) {
+        return
+      }
+      if (redirectOnAccessFailure(result)) {
+        return
+      }
+      if (!result.ok || typeof result.data.name !== 'string' || !Number.isSafeInteger(result.data.id)) {
+        setQuoteNotice(customerErrorMessage(result, '고객 정보를 불러오지 못했습니다.'))
+        return
+      }
+      setSelectedCustomer(customerSummaryFromDetail(result.data))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [sessionReady, customerId])
 
   useEffect(() => {
     if (!customerPopupOpen) {

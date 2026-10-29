@@ -37,6 +37,35 @@ export function customerEditPath(customerId: number) {
   return `/customers/${customerId}/edit`
 }
 
+export function customerSummaryFromDetail(customer: {
+  id: number
+  name: string
+  phone: string | null
+  customerType: string
+}): CustomerSummary {
+  return {
+    id: customer.id,
+    name: customer.name,
+    phone: customer.phone,
+    customerType: customer.customerType,
+  }
+}
+
+export function consultationCustomerId(value: string | null) {
+  if (!value || !/^[1-9]\d*$/.test(value)) {
+    return null
+  }
+  const customerId = Number(value)
+  return Number.isSafeInteger(customerId) ? customerId : null
+}
+
+export function quoteFromCustomerPath(customerId: number) {
+  const params = new URLSearchParams()
+  params.set('mode', 'new')
+  params.set('customerId', String(customerId))
+  return `/consultation?${params.toString()}`
+}
+
 export function customerRecordRoute(pathname: string) {
   const editing = /^\/customers\/([1-9]\d*)\/edit$/.exec(pathname)
   const detail = /^\/customers\/([1-9]\d*)$/.exec(pathname)

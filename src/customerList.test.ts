@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { CONNECTION_MESSAGE } from './loginDecision.ts'
-import { customerErrorMessage, customerDetailPath, customerEditPath, customerRecordRoute, customersPath, displayPhone } from './customerList.ts'
+import {
+  consultationCustomerId,
+  customerErrorMessage,
+  customerSummaryFromDetail,
+  customerDetailPath,
+  customerEditPath,
+  customerRecordRoute,
+  customersPath,
+  displayPhone,
+  quoteFromCustomerPath,
+} from './customerList.ts'
 
 test('고객 목록 요청은 page, size, keyword를 쿼리로 붙인다', () => {
   assert.equal(customersPath(0, 20, ''), '/api/customers?page=0&size=20')
@@ -23,6 +33,23 @@ test('고객 상세와 수정 경로는 고객 번호로 구분한다', () => {
   assert.equal(customerRecordRoute('/customers/new'), null)
   assert.equal(customerRecordRoute('/customers/0'), null)
 })
+test('고객 목록의 견적 시작은 상담 화면에 고객 번호를 전달한다', () => {
+  assert.equal(quoteFromCustomerPath(12), '/consultation?mode=new&customerId=12')
+  assert.equal(consultationCustomerId('12'), 12)
+  assert.equal(consultationCustomerId('0'), null)
+  assert.equal(consultationCustomerId('new'), null)
+  assert.equal(consultationCustomerId(null), null)
+  assert.deepEqual(
+    customerSummaryFromDetail({
+      id: 12,
+      name: '김진주',
+      phone: '01011112222',
+      customerType: 'COMPANY',
+    }),
+    { id: 12, name: '김진주', phone: '01011112222', customerType: 'COMPANY' },
+  )
+})
+
 test('고객 목록 오류는 연결 실패와 서버 문구를 구분한다', () => {
   assert.equal(customerErrorMessage({ ok: false, status: 0, error: null }, '실패'), CONNECTION_MESSAGE)
   assert.equal(
