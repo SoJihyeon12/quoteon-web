@@ -1,0 +1,39 @@
+.status-details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 28px 0 0;
+}
+
+.status-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.status-details dt {
+  color: #5d6d80;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.status-details dd {
+  margin: 0;
+  color: #12263f;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.status-note {
+  margin: 28px 0 0;
+  color: #5d6d80;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.status-action {
+  width: 100%;
+  margin-top: 28px;
+}
