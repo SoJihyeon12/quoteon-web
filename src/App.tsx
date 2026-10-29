@@ -3,7 +3,6 @@ import AdminHomePage from './pages/AdminHomePage.tsx'
 import ConsultationPage from './pages/ConsultationPage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import PendingPage from './pages/PendingPage.tsx'
-import QuoteFormPage from './pages/QuoteFormPage.tsx'
 import QuoteListPage from './pages/QuoteListPage.tsx'
 import RestrictedPage from './pages/RestrictedPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
@@ -14,9 +13,17 @@ type Route = {
 }
 
 function readRoute(): Route {
-  const pathname = window.location.pathname === '/' ? '/login' : window.location.pathname
-  const mode = new URLSearchParams(window.location.search).get('mode')
-  return { pathname, mode }
+  const rawPath = window.location.pathname
+  if (rawPath === '/') {
+    return { pathname: '/login', mode: null }
+  }
+  if (rawPath === '/quotes/new') {
+    return { pathname: '/consultation', mode: 'new' }
+  }
+  return {
+    pathname: rawPath,
+    mode: new URLSearchParams(window.location.search).get('mode'),
+  }
 }
 
 export default function App() {
@@ -26,8 +33,16 @@ export default function App() {
     if (window.location.pathname === '/') {
       window.history.replaceState(null, '', '/login')
     }
+    if (window.location.pathname === '/quotes/new') {
+      window.history.replaceState(null, '', '/consultation?mode=new')
+    }
 
-    const onPopState = () => setRoute(readRoute())
+    const onPopState = () => {
+      if (window.location.pathname === '/quotes/new') {
+        window.history.replaceState(null, '', '/consultation?mode=new')
+      }
+      setRoute(readRoute())
+    }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
@@ -54,10 +69,6 @@ export default function App() {
 
   if (route.pathname === '/quotes/my') {
     return <QuoteListPage />
-  }
-
-  if (route.pathname === '/quotes/new') {
-    return <QuoteFormPage />
   }
 
   if (route.pathname === '/consultation' && route.mode === 'new') {

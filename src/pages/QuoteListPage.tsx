@@ -135,7 +135,7 @@ export default function QuoteListPage() {
       <section className="quote-panel" aria-labelledby="quote-list-title">
         <div className="quote-heading">
           <h1 id="quote-list-title">내 견적</h1>
-          <a className="quote-create" href="/quotes/new">
+          <a className="quote-create" href="/consultation?mode=new">
             견적서 작성
           </a>
         </div>

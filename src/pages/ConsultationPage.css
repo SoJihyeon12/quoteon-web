@@ -662,3 +662,154 @@
     flex: 1;
   }
 }
+
+.product-add {
+  height: 36px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: #1f6feb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.product-add:hover {
+  background: #1858c7;
+}
+
+.quote-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quote-line {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e6edf5;
+}
+
+.quote-line-top,
+.quote-line-qty,
+.quote-amounts p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quote-line-top p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+}
+
+.quote-line-top strong,
+.quote-line-qty strong {
+  color: #12263f;
+  font-size: 14px;
+}
+
+.quote-line-top span,
+.quote-line-qty label,
+.quote-amounts span {
+  color: #5d6d80;
+  font-size: 13px;
+}
+
+.quote-line-qty label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quote-line-qty input,
+.customer-id-form input {
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #d7e0ea;
+  border-radius: 8px;
+  color: #12263f;
+  font: inherit;
+}
+
+.quote-line-qty input {
+  width: 72px;
+}
+
+.quote-line-remove {
+  border: 0;
+  background: transparent;
+  color: #5d6d80;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-amounts {
+  display: grid;
+  gap: 6px;
+}
+
+.quote-amounts p {
+  margin: 0;
+}
+
+.quote-amounts strong {
+  color: #12263f;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.preview-button-secondary {
+  background: #fff;
+  color: #1f6feb;
+  border: 1px solid #1f6feb;
+}
+
+.preview-button-secondary:hover {
+  background: #f3f7ff;
+}
+
+.customer-id-form {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.customer-id-form label {
+  display: grid;
+  gap: 6px;
+  color: #12263f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.customer-id-form input {
+  width: 140px;
+}
+
+.customer-id-form button {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #1f6feb;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}

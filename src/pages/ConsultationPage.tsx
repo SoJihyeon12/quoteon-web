@@ -1,8 +1,11 @@
 import { useEffect, useId, useState, type FormEvent, type MouseEvent } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
 import { fetchCategories, fetchProducts } from '../api/catalog.ts'
+import { createQuote } from '../api/quotes.ts'
 import type { ApiResult, Category, Product } from '../api/types.ts'
 import { navigate } from '../navigation.ts'
+import { buildCreateQuoteBody, priceQuote } from '../quoteForm.ts'
+import { quoteErrorMessage } from '../quoteList.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
 import './ConsultationPage.css'
 
@@ -22,8 +25,20 @@ function formatPrice(value: number) {
   return `${new Intl.NumberFormat('ko-KR').format(value)}원`
 }
 
+type QuoteLine = {
+  productId: number
+  productCode: string
+  name: string
+  salePrice: number
+  quantity: string
+}
+
 function isSalesMember(member: { role: string; status: string }) {
   return member.status === 'ACTIVE' && member.role === 'ROLE_USER'
+}
+
+function validQuantity(value: string) {
+  return /^[1-9]\d*$/.test(value.trim())
 }
 
 function failureMessage(result: ApiResult<unknown>, fallback: string) {
@@ -49,6 +64,11 @@ export default function ConsultationPage() {
   const [memo, setMemo] = useState('')
   const [writtenOn, setWrittenOn] = useState(todayLabel)
   const [quoteNotice, setQuoteNotice] = useState('')
+  const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([])
+  const [saving, setSaving] = useState(false)
+  const [selectedCustomerId, setSelectedCustomerId] = useState('')
+  const [customerIdDraft, setCustomerIdDraft] = useState('')
+  const [customerIdMessage, setCustomerIdMessage] = useState('')
   const [customerPopupOpen, setCustomerPopupOpen] = useState(false)
   const [customerKeyword, setCustomerKeyword] = useState('')
   const [customerNotice, setCustomerNotice] = useState(CUSTOMER_UNAVAILABLE)
@@ -132,9 +152,79 @@ export default function ConsultationPage() {
     setMemo('')
     setWrittenOn(todayLabel())
     setQuoteNotice('')
+    setQuoteLines([])
+    setSaving(false)
+    setSelectedCustomerId('')
+    setCustomerIdDraft('')
+    setCustomerIdMessage('')
     setCustomerPopupOpen(false)
     setCustomerKeyword('')
     setCustomerNotice(CUSTOMER_UNAVAILABLE)
+  }
+
+  function openCustomerPopup() {
+    setCustomerIdDraft(selectedCustomerId)
+    setCustomerIdMessage('')
+    setCustomerPopupOpen(true)
+  }
+
+  function handleSelectCustomer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const trimmed = customerIdDraft.trim()
+    if (!/^[1-9]\d*$/.test(trimmed) || !Number.isSafeInteger(Number(trimmed))) {
+      setCustomerIdMessage('고객을 선택해 주세요.')
+      return
+    }
+    setSelectedCustomerId(trimmed)
+    setCustomerIdMessage('')
+    setCustomerPopupOpen(false)
+  }
+
+  function addProduct(product: Product) {
+    setQuoteNotice('')
+    setQuoteLines((current) => {
+      const existing = current.find((line) => line.productId === product.id)
+      if (!existing) {
+        return [
+          ...current,
+          {
+            productId: product.id,
+            productCode: product.productCode,
+            name: product.name,
+            salePrice: product.salePrice,
+            quantity: '1',
+          },
+        ]
+      }
+      const next = validQuantity(existing.quantity) ? Number(existing.quantity) + 1 : 1
+      return current.map((line) =>
+        line.productId === product.id ? { ...line, quantity: String(next) } : line,
+      )
+    })
+  }
+
+  async function handleSaveQuote() {
+    const built = buildCreateQuoteBody({
+      customerId: selectedCustomerId,
+      quoteDate: writtenOn,
+      items: quoteLines.map((line) => ({ productId: line.productId, quantity: line.quantity })),
+    })
+    if (!built.ok) {
+      setQuoteNotice(built.message)
+      return
+    }
+    setSaving(true)
+    setQuoteNotice('')
+    const result = await createQuote(built.body)
+    if (redirectOnAccessFailure(result)) {
+      return
+    }
+    if (!result.ok) {
+      setSaving(false)
+      setQuoteNotice(quoteErrorMessage(result, '견적서를 저장하지 못했습니다.'))
+      return
+    }
+    navigate('/quotes/my')
   }
 
   async function handleLogout() {
@@ -200,6 +290,20 @@ export default function ConsultationPage() {
     }
 
     setCustomerNotice('고객 API가 연결되지 않아 고객명 또는 연락처로 검색할 수 없습니다.')
+  }
+
+  const pricedLines = quoteLines.flatMap((line) =>
+    validQuantity(line.quantity) ? [{ salePrice: line.salePrice, quantity: Number(line.quantity) }] : [],
+  )
+  const priced = priceQuote(pricedLines)
+  const amountByProductId = new Map<number, number>()
+  let pricedIndex = 0
+  for (const line of quoteLines) {
+    if (!validQuantity(line.quantity)) {
+      continue
+    }
+    amountByProductId.set(line.productId, priced.amounts[pricedIndex] ?? 0)
+    pricedIndex += 1
   }
 
   const visibleProducts =
@@ -351,6 +455,9 @@ export default function ConsultationPage() {
                   <p className="product-name">{product.name}</p>
                   <p className="product-code">{product.productCode}</p>
                   <p className="product-price">{formatPrice(product.salePrice)}</p>
+                  <button type="button" className="product-add" onClick={() => addProduct(product)}>
+                    담기
+                  </button>
                 </li>
               ))}
             </ul>
@@ -371,7 +478,7 @@ export default function ConsultationPage() {
         </section>
 
         <aside className="quote-panel" aria-labelledby={titleId}>
-          <button type="button" className="customer-select" onClick={() => setCustomerPopupOpen(true)}>
+          <button type="button" className="customer-select" onClick={openCustomerPopup}>
             <span className="workbench-user-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -384,7 +491,7 @@ export default function ConsultationPage() {
                 />
               </svg>
             </span>
-            고객을 선택하세요.
+            {selectedCustomerId ? `고객 번호 ${selectedCustomerId}` : '고객을 선택하세요.'}
           </button>
 
           <div className="quote-heading">
@@ -395,11 +502,69 @@ export default function ConsultationPage() {
             </p>
           </div>
 
-          <p className="quote-empty">담은 제품이 없습니다.</p>
+          {quoteLines.length === 0 ? (
+            <p className="quote-empty">담은 제품이 없습니다.</p>
+          ) : (
+            <ul className="quote-lines">
+              {quoteLines.map((line) => {
+                const amount = amountByProductId.get(line.productId)
+                return (
+                  <li key={line.productId} className="quote-line">
+                    <div className="quote-line-top">
+                      <p>
+                        <strong>{line.name}</strong>
+                        <span>{line.productCode}</span>
+                      </p>
+                      <button
+                        type="button"
+                        className="quote-line-remove"
+                        onClick={() =>
+                          setQuoteLines((current) => current.filter((item) => item.productId !== line.productId))
+                        }
+                      >
+                        삭제
+                      </button>
+                    </div>
+                    <div className="quote-line-qty">
+                      <label>
+                        수량
+                        <input
+                          inputMode="numeric"
+                          aria-label={`${line.name} 수량`}
+                          value={line.quantity}
+                          onChange={(event) =>
+                            setQuoteLines((current) =>
+                              current.map((item) =>
+                                item.productId === line.productId ? { ...item, quantity: event.target.value } : item,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                      <strong>{amount === undefined ? '-' : formatPrice(amount)}</strong>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          {quoteLines.length > 0 ? (
+            <div className="quote-amounts">
+              <p>
+                <span>공급가액</span>
+                <strong>{formatPrice(priced.supplyAmount)}</strong>
+              </p>
+              <p>
+                <span>부가세 10%</span>
+                <strong>{formatPrice(priced.vatAmount)}</strong>
+              </p>
+            </div>
+          ) : null}
 
           <div className="quote-total">
             <span>합계</span>
-            <strong>0원</strong>
+            <strong>{formatPrice(priced.totalAmount)}</strong>
           </div>
 
           <label className="memo-field" htmlFor="quote-memo">
@@ -418,7 +583,10 @@ export default function ConsultationPage() {
             </p>
           ) : null}
 
-          <button type="button" className="preview-button" onClick={handlePreview}>
+          <button type="button" className="preview-button" disabled={saving} onClick={handleSaveQuote}>
+            {saving ? '저장 중입니다.' : '견적서 저장'}
+          </button>
+          <button type="button" className="preview-button preview-button-secondary" onClick={handlePreview}>
             견적서 미리보기
           </button>
         </aside>
@@ -434,7 +602,7 @@ export default function ConsultationPage() {
           >
             <div className="customer-dialog-head">
               <p id={popupTitleId}>
-                선택한 고객: <strong>없음</strong>
+                선택한 고객: <strong>{selectedCustomerId || '없음'}</strong>
               </p>
               <button
                 type="button"
@@ -477,6 +645,25 @@ export default function ConsultationPage() {
                 </tbody>
               </table>
             </div>
+
+            <form className="customer-id-form" onSubmit={handleSelectCustomer}>
+              <label htmlFor="customer-id">고객 번호</label>
+              <input
+                id="customer-id"
+                inputMode="numeric"
+                value={customerIdDraft}
+                onChange={(event) => setCustomerIdDraft(event.target.value)}
+              />
+              <button type="submit">선택</button>
+            </form>
+            <p className="panel-note">
+              고객 목록 조회 API가 없어 고객명으로 고를 수 없습니다. 본인 고객 번호를 입력한 뒤 선택해 주세요.
+            </p>
+            {customerIdMessage ? (
+              <p className="panel-note panel-note-alert" role="alert">
+                {customerIdMessage}
+              </p>
+            ) : null}
 
             <div className="pager" aria-label="고객 목록 페이지">
               <button type="button" disabled>
