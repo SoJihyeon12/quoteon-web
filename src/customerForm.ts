@@ -1,4 +1,4 @@
-export const CUSTOMER_TYPES = ['COMPANY', 'BUSINESS'] as const
+export const CUSTOMER_TYPES = ['개인', '기업'] as const
 
 export type CreateCustomerBody = {
   name: string
@@ -30,8 +30,8 @@ export function buildCreateCustomerBody(input: {
   if (!customerType) {
     return { ok: false, message: '고객 유형을 선택해 주세요.' }
   }
-  if (customerType.length > 30) {
-    return { ok: false, message: '고객 유형은 30자 이하로 입력해 주세요.' }
+  if (!CUSTOMER_TYPES.some((type) => type === customerType)) {
+    return { ok: false, message: '고객 유형은 개인 또는 기업만 선택할 수 있습니다.' }
   }
 
   const phone = input.phone.trim()

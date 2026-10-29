@@ -24,6 +24,7 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
   const [ready, setReady] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [submittedKeyword, setSubmittedKeyword] = useState('')
+  const [customerTypeFilter, setCustomerTypeFilter] = useState('')
   const [page, setPage] = useState(0)
   const [reloadKey, setReloadKey] = useState(0)
   const [items, setItems] = useState<CustomerSummary[]>([])
@@ -64,7 +65,7 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
       return
     }
     let cancelled = false
-    fetchCustomers(page, submittedKeyword).then((result) => {
+    fetchCustomers(page, submittedKeyword, customerTypeFilter).then((result) => {
       if (cancelled) {
         return
       }
@@ -91,7 +92,13 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
     return () => {
       cancelled = true
     }
-  }, [ready, page, submittedKeyword, reloadKey])
+  }, [ready, page, submittedKeyword, customerTypeFilter, reloadKey])
+
+  function selectCustomerType(next: string) {
+    setCustomerTypeFilter(next)
+    setPage(0)
+    setListState('loading')
+  }
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -168,6 +175,28 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
           {menuNotice}
         </p>
       ) : null}
+      <div className="customer-layout">
+        <nav className="category-panel" aria-label="고객 유형">
+          <button
+            type="button"
+            className="category-item"
+            aria-current={customerTypeFilter === '' ? 'true' : undefined}
+            onClick={() => selectCustomerType('')}
+          >
+            전체
+          </button>
+          {CUSTOMER_TYPES.map((type) => (
+            <button
+              key={type}
+              type="button"
+              className="category-item"
+              aria-current={customerTypeFilter === type ? 'true' : undefined}
+              onClick={() => selectCustomerType(type)}
+            >
+              {type}
+            </button>
+          ))}
+        </nav>
       <section className="quote-panel" aria-labelledby="customer-list-title">
         <div className="quote-heading">
           <h1 id="customer-list-title">고객</h1>
@@ -195,7 +224,7 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
         ) : null}
         {listState === 'empty' ? (
           <p className="quote-empty" role="status">
-            {submittedKeyword.trim() ? '검색 결과가 없습니다.' : '등록된 고객이 없습니다.'}
+            {submittedKeyword.trim() || customerTypeFilter ? '검색 결과가 없습니다.' : '등록된 고객이 없습니다.'}
           </p>
         ) : null}
         {listState === 'error' ? (
@@ -267,6 +296,7 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
           </div>
         ) : null}
       </section>
+      </div>
       {creating ? (
         <div className="customer-modal">
           <div className="customer-dialog" role="dialog" aria-modal="true" aria-labelledby="customer-create-title">

@@ -12,8 +12,8 @@ export type CreatedCustomer = {
   memo: string | null
 }
 
-export function fetchCustomers(page: number, keyword: string) {
-  return apiRequest<CustomerPage>(customersPath(page, CUSTOMER_PAGE_SIZE, keyword))
+export function fetchCustomers(page: number, keyword: string, customerType = '') {
+  return apiRequest<CustomerPage>(customersPath(page, CUSTOMER_PAGE_SIZE, keyword, customerType))
 }
 
 export function fetchCustomer(customerId: number) {

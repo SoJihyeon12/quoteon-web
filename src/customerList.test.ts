@@ -13,9 +13,15 @@ import {
   quoteFromCustomerPath,
 } from './customerList.ts'
 
-test('고객 목록 요청은 page, size, keyword를 쿼리로 붙인다', () => {
+test('고객 목록 요청은 전체 조회와 유형, 키워드를 구분한다', () => {
   assert.equal(customersPath(0, 20, ''), '/api/customers?page=0&size=20')
   assert.equal(customersPath(1, 20, '  홍길동  '), '/api/customers?page=1&size=20&keyword=%ED%99%8D%EA%B8%B8%EB%8F%99')
+  assert.equal(customersPath(0, 20, '', '개인'), '/api/customers?page=0&size=20&customerType=%EA%B0%9C%EC%9D%B8')
+  assert.equal(
+    customersPath(1, 20, ' 홍길동 ', '기업'),
+    '/api/customers?page=1&size=20&keyword=%ED%99%8D%EA%B8%B8%EB%8F%99&customerType=%EA%B8%B0%EC%97%85',
+  )
+  assert.equal(customersPath(0, 20, '홍길동', ''), '/api/customers?page=0&size=20&keyword=%ED%99%8D%EA%B8%B8%EB%8F%99')
 })
 
 test('연락처가 없으면 대시를 표시한다', () => {
@@ -44,9 +50,18 @@ test('고객 목록의 견적 시작은 상담 화면에 고객 번호를 전달
       id: 12,
       name: '김진주',
       phone: '01011112222',
-      customerType: 'COMPANY',
+      customerType: '기업',
     }),
-    { id: 12, name: '김진주', phone: '01011112222', customerType: 'COMPANY' },
+    { id: 12, name: '김진주', phone: '01011112222', customerType: '기업' },
+  )
+  assert.equal(
+    customerSummaryFromDetail({
+      id: 3,
+      name: '기존 고객',
+      phone: null,
+      customerType: 'COMPANY',
+    }).customerType,
+    'COMPANY',
   )
 })
 

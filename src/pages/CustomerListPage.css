@@ -1,3 +1,28 @@
+.customer-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .customer-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-layout .category-panel {
+    display: flex;
+    gap: 8px;
+    border-right: 0;
+    border-bottom: 1px solid #e6edf5;
+  }
+
+  .customer-layout .category-item {
+    width: auto;
+    margin-top: 0;
+  }
+}
+
 .customer-list-search {
   display: flex;
   gap: 8px;

@@ -18,13 +18,16 @@ export type CustomerPage = {
   totalPages: number
 }
 
-export function customersPath(page: number, size: number, keyword: string) {
+export function customersPath(page: number, size: number, keyword: string, customerType = '') {
   const params = new URLSearchParams()
   params.set('page', String(page))
   params.set('size', String(size))
   const trimmed = keyword.trim()
   if (trimmed) {
     params.set('keyword', trimmed)
+  }
+  if (customerType === '개인' || customerType === '기업') {
+    params.set('customerType', customerType)
   }
   return `/api/customers?${params.toString()}`
 }
