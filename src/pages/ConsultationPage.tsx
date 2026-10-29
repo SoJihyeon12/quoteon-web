@@ -240,7 +240,7 @@ export default function ConsultationPage() {
           <a href="/consultation?mode=new" aria-current="page">
             상담
           </a>
-          <a href="/quotes/my" onClick={handleUnavailableMenu}>
+          <a href="/quotes/my">
             내 견적
           </a>
           <a href="/customers" onClick={handleUnavailableMenu}>
