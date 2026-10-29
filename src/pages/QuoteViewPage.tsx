@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
 import { fetchQuote, type QuoteDetail } from '../api/quotes.ts'
 import { formatAmount, quoteErrorMessage, quoteStatusLabel } from '../quoteList.ts'
@@ -79,11 +79,6 @@ export default function QuoteViewPage({ quoteId }: { quoteId: number }) {
     setMenuNotice(result.error?.message || '로그아웃하지 못했습니다.')
   }
 
-  function handleUnavailableMenu(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault()
-    setMenuNotice('해당 화면은 아직 연결되지 않았습니다.')
-  }
-
   return (
     <div className="workbench">
       <header className="workbench-header">
@@ -95,9 +90,7 @@ export default function QuoteViewPage({ quoteId }: { quoteId: number }) {
           <a href="/quotes/my" aria-current="page">
             내 견적
           </a>
-          <a href="/customers" onClick={handleUnavailableMenu}>
-            고객
-          </a>
+          <a href="/customers">고객</a>
         </nav>
         <p className="workbench-user">
           <span className="workbench-user-icon" aria-hidden="true">

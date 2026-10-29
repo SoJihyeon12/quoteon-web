@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type FormEvent, type MouseEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
 import { fetchCategories, fetchProducts } from '../api/catalog.ts'
 import { fetchCustomers } from '../api/customers.ts'
@@ -316,11 +316,6 @@ export default function ConsultationPage() {
     setQuoteNotice(PREVIEW_UNAVAILABLE)
   }
 
-  function handleUnavailableMenu(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault()
-    setMenuNotice('해당 화면은 아직 연결되지 않았습니다.')
-  }
-
   function handleCustomerSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSubmittedKeyword(customerKeyword)
@@ -384,9 +379,7 @@ export default function ConsultationPage() {
           <a href="/quotes/my">
             내 견적
           </a>
-          <a href="/customers" onClick={handleUnavailableMenu}>
-            고객
-          </a>
+          <a href="/customers">고객</a>
         </nav>
         <p className="workbench-user">
           <span className="workbench-user-icon" aria-hidden="true">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AdminHomePage from './pages/AdminHomePage.tsx'
 import ConsultationPage from './pages/ConsultationPage.tsx'
+import CustomerListPage from './pages/CustomerListPage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import PendingPage from './pages/PendingPage.tsx'
 import QuoteListPage from './pages/QuoteListPage.tsx'
@@ -76,6 +77,10 @@ export default function App() {
   const quoteId = quoteIdFromViewPath(route.pathname)
   if (quoteId !== null) {
     return <QuoteViewPage key={quoteId} quoteId={quoteId} />
+  }
+
+  if (route.pathname === '/customers' || route.pathname === '/customers/new') {
+    return <CustomerListPage key={route.pathname} creating={route.pathname === '/customers/new'} />
   }
 
   if (route.pathname === '/consultation' && route.mode === 'new') {

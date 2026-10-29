@@ -1,0 +1,103 @@
+.customer-list-search {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.customer-list-search input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #d7e0ea;
+  border-radius: 10px;
+  color: #12263f;
+}
+
+.customer-list-search button,
+.customer-create-actions button {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-list-search button,
+.customer-create-actions button[type='submit'] {
+  border: 0;
+  background: #1f6feb;
+  color: #fff;
+}
+
+.customer-list-search button:hover,
+.customer-create-actions button[type='submit']:hover {
+  background: #1858c7;
+}
+
+.customer-create-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.customer-create-form label {
+  display: grid;
+  gap: 6px;
+  color: #12263f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.customer-create-form input,
+.customer-create-form select,
+.customer-create-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d7e0ea;
+  border-radius: 10px;
+  color: #12263f;
+  font: inherit;
+  font-weight: 500;
+}
+
+.customer-create-form input,
+.customer-create-form select {
+  height: 44px;
+}
+
+.customer-create-form textarea {
+  resize: vertical;
+}
+
+.customer-create-form input:focus,
+.customer-create-form select:focus,
+.customer-create-form textarea:focus {
+  border-color: #1f6feb;
+  outline: 2px solid rgba(31, 111, 235, 0.16);
+}
+
+.customer-create-message {
+  margin: 0;
+  color: #b42318;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.customer-create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.customer-create-actions button[type='button'] {
+  border: 1px solid #d7e0ea;
+  background: #fff;
+  color: #5d6d80;
+}
+
+.customer-create-actions button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
