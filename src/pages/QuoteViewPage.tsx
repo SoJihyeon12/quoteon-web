@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
 import { fetchQuote, type QuoteDetail } from '../api/quotes.ts'
 import { formatAmount, quoteErrorMessage, quoteStatusLabel } from '../quoteList.ts'
+import { canEditStoredQuote, quoteEditPath, quoteRewritePath } from '../quoteWorkbench.ts'
 import { navigate } from '../navigation.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
 import './ConsultationPage.css'
@@ -119,6 +120,18 @@ export default function QuoteViewPage({ quoteId }: { quoteId: number }) {
       <section className="quote-panel" aria-labelledby="quote-view-title">
         <div className="quote-heading">
           <h1 id="quote-view-title">견적서 확인</h1>
+          {viewState === 'ready' && quote ? (
+            <div className="quote-view-actions">
+              {canEditStoredQuote(quote.status) ? (
+                <a className="quote-create" href={quoteEditPath(quote.id)}>
+                  견적서 수정
+                </a>
+              ) : null}
+              <a className="quote-create quote-rewrite" href={quoteRewritePath(quote.id)}>
+                견적서 재작성
+              </a>
+            </div>
+          ) : null}
         </div>
         {viewState === 'loading' ? (
           <p className="quote-empty" role="status">

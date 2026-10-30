@@ -65,15 +65,28 @@ export function previewQuote(draft: QuotePreviewDraft) {
   }
 }
 
+export function quotePreviewReturnPath(state: unknown) {
+  if (!state || typeof state !== 'object' || !('returnPath' in state)) {
+    return QUOTE_WORKBENCH_PATH
+  }
+  const returnPath = state.returnPath
+  if (typeof returnPath !== 'string' || !returnPath.startsWith('/consultation')) {
+    return QUOTE_WORKBENCH_PATH
+  }
+  return returnPath
+}
+
 export function openQuotePreview(draft: QuotePreviewDraft) {
-  const state = previewHistoryState(draft)
+  const returnPath = `${window.location.pathname}${window.location.search}`
+  const state = previewHistoryState(draft, returnPath)
   window.history.replaceState(state, '', window.location.href)
   window.history.pushState(state, '', QUOTE_PREVIEW_PATH)
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
 export function returnToQuoteWorkbench(draft: QuotePreviewDraft | null) {
-  window.history.pushState(draft ? previewHistoryState(draft) : null, '', QUOTE_WORKBENCH_PATH)
+  const returnPath = quotePreviewReturnPath(window.history.state)
+  window.history.pushState(draft ? previewHistoryState(draft, returnPath) : null, '', returnPath)
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
@@ -93,8 +106,8 @@ export function quotePreviewFromHistory(state: unknown) {
   return readQuotePreview(JSON.stringify(state.draft))
 }
 
-function previewHistoryState(draft: QuotePreviewDraft) {
-  return { source: 'quote-preview', draft }
+function previewHistoryState(draft: QuotePreviewDraft, returnPath: string) {
+  return { source: 'quote-preview', draft, returnPath }
 }
 
 export function readQuotePreview(raw: string | null): QuotePreviewDraft | null {

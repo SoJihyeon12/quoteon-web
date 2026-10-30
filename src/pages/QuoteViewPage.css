@@ -45,3 +45,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+.quote-view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quote-rewrite {
+  border: 1px solid #1f6feb;
+  background: #fff;
+  color: #1f6feb;
+}
+
+.quote-rewrite:hover {
+  background: #f3f7ff;
+}

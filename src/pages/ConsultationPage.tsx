@@ -2,7 +2,7 @@ import { useEffect, useId, useState, type FormEvent } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
 import { fetchCategories, fetchProducts } from '../api/catalog.ts'
 import { fetchCustomer, fetchCustomers } from '../api/customers.ts'
-import { createQuote } from '../api/quotes.ts'
+import { createQuote, fetchQuote, updateQuote } from '../api/quotes.ts'
 import type { ApiResult, Category, Product } from '../api/types.ts'
 import {
   customerErrorMessage,
@@ -25,6 +25,14 @@ import { navigate } from '../navigation.ts'
 import { clearQuotePreviewHistory, openQuotePreview, quotePreviewFromHistory } from '../quotePreview.ts'
 import { buildCreateQuoteBody, priceQuote } from '../quoteForm.ts'
 import { quoteErrorMessage } from '../quoteList.ts'
+import {
+  QUOTE_EDIT_MODE,
+  QUOTE_REWRITE_MODE,
+  SENT_QUOTE_EDIT_MESSAGE,
+  quoteCustomerLocked,
+  quoteSaveAction,
+  workbenchDraftFromQuote,
+} from '../quoteWorkbench.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
 import './ConsultationPage.css'
 
@@ -68,9 +76,13 @@ function failureMessage(result: ApiResult<unknown>, fallback: string) {
 export default function ConsultationPage({
   dialog,
   customerId,
+  quoteId,
+  mode,
 }: {
   dialog: ConsultationDialog | null
   customerId: number | null
+  quoteId: number | null
+  mode: string | null
 }) {
   const titleId = useId()
   const popupTitleId = useId()
@@ -86,6 +98,11 @@ export default function ConsultationPage({
   const [productNotice, setProductNotice] = useState('제품 목록을 확인하는 중입니다.')
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({})
   const [restoredDraft] = useState(() => quotePreviewFromHistory(window.history.state))
+  const loadsStoredQuote =
+    (mode === QUOTE_EDIT_MODE || mode === QUOTE_REWRITE_MODE) && quoteId !== null && !restoredDraft
+  const [sourceReady, setSourceReady] = useState(!loadsStoredQuote)
+  const [editBlocked, setEditBlocked] = useState(mode === QUOTE_EDIT_MODE && quoteId === null)
+  const customerLocked = quoteCustomerLocked(mode)
   const [memo, setMemo] = useState(() => restoredDraft?.memo ?? '')
   const [writtenOn, setWrittenOn] = useState(() => restoredDraft?.writtenOn || todayLabel())
   const [quoteNotice, setQuoteNotice] = useState('')
@@ -157,7 +174,7 @@ export default function ConsultationPage({
   }, [])
 
   useEffect(() => {
-    if (!sessionReady || customerId === null) {
+    if (!sessionReady || customerId === null || quoteId !== null) {
       return
     }
     let cancelled = false
@@ -177,7 +194,68 @@ export default function ConsultationPage({
     return () => {
       cancelled = true
     }
-  }, [sessionReady, customerId])
+  }, [sessionReady, customerId, quoteId])
+
+  useEffect(() => {
+    if (!sessionReady || quoteId === null) {
+      return
+    }
+    if (mode !== QUOTE_EDIT_MODE && mode !== QUOTE_REWRITE_MODE) {
+      return
+    }
+    let cancelled = false
+    fetchQuote(quoteId).then(async (result) => {
+      if (cancelled) {
+        return
+      }
+      if (redirectOnAccessFailure(result)) {
+        return
+      }
+      if (!result.ok || !Array.isArray(result.data.items)) {
+        setSourceReady(false)
+        setQuoteNotice(quoteErrorMessage(result, '견적서를 불러오지 못했습니다.'))
+        return
+      }
+      if (restoredDraft) {
+        if (mode === QUOTE_EDIT_MODE && result.data.status !== 'DRAFT') {
+          setEditBlocked(true)
+          setQuoteNotice(SENT_QUOTE_EDIT_MESSAGE)
+        }
+        return
+      }
+      const draft = workbenchDraftFromQuote(result.data)
+      if (!draft) {
+        setSourceReady(false)
+        setQuoteNotice('견적서를 불러오지 못했습니다.')
+        return
+      }
+      if (mode === QUOTE_EDIT_MODE && result.data.status !== 'DRAFT') {
+        setEditBlocked(true)
+        setQuoteNotice(SENT_QUOTE_EDIT_MESSAGE)
+      }
+      setWrittenOn(draft.writtenOn)
+      setQuoteLines(draft.lines)
+      setSelectedCustomer(draft.customer)
+      setMemo('')
+      const customerResult = await fetchCustomer(result.data.customerId)
+      if (cancelled) {
+        return
+      }
+      if (customerResult.ok && typeof customerResult.data.name === 'string') {
+        setSelectedCustomer((current) =>
+          current && current.id !== result.data.customerId
+            ? current
+            : customerSummaryFromDetail(customerResult.data),
+        )
+      } else if (!customerResult.ok) {
+        redirectOnAccessFailure(customerResult)
+      }
+      setSourceReady(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [sessionReady, quoteId, mode, restoredDraft])
 
   useEffect(() => {
     if (!customerPopupOpen) {
@@ -291,14 +369,23 @@ export default function ConsultationPage({
 
   function confirmQuoteDialog() {
     resetQuote()
+    if (mode === QUOTE_EDIT_MODE || mode === QUOTE_REWRITE_MODE) {
+      navigate('/consultation?mode=new')
+    }
   }
 
   function openCustomerPopup() {
+    if (customerLocked) {
+      return
+    }
     setCustomerListState('loading')
     setCustomerPopupOpen(true)
   }
 
   function chooseCustomer(customer: CustomerSummary) {
+    if (customerLocked) {
+      return
+    }
     setSelectedCustomer(customer)
     setQuoteNotice('')
     setCustomerPopupOpen(false)
@@ -339,7 +426,18 @@ export default function ConsultationPage({
     }
     setSaving(true)
     setQuoteNotice('')
-    const result = await createQuote(built.body)
+    const action = quoteSaveAction(mode, quoteId)
+    if (action === 'blocked' || editBlocked || !sourceReady) {
+      setSaving(false)
+      if (editBlocked) {
+        setQuoteNotice(SENT_QUOTE_EDIT_MESSAGE)
+      }
+      return
+    }
+    const result =
+      action === 'update' && quoteId !== null
+        ? await updateQuote(quoteId, built.body)
+        : await createQuote(built.body)
     if (redirectOnAccessFailure(result)) {
       return
     }
@@ -598,7 +696,12 @@ export default function ConsultationPage({
         </section>
 
         <aside className="quote-panel" aria-labelledby={titleId}>
-          <button type="button" className="customer-select" onClick={openCustomerPopup}>
+          <button
+            type="button"
+            className="customer-select"
+            onClick={openCustomerPopup}
+            disabled={customerLocked}
+          >
             <span className="workbench-user-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -703,7 +806,7 @@ export default function ConsultationPage({
             </p>
           ) : null}
 
-          <button type="button" className="preview-button" disabled={saving} onClick={handleSaveQuote}>
+          <button type="button" className="preview-button" disabled={saving || editBlocked || !sourceReady} onClick={handleSaveQuote}>
             {saving ? '저장 중입니다.' : '견적서 저장'}
           </button>
           <button type="button" className="preview-button preview-button-secondary" onClick={handlePreview}>

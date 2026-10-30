@@ -43,3 +43,10 @@ export function createQuote(body: CreateQuoteBody) {
     body: JSON.stringify(body),
   })
 }
+
+export function updateQuote(quoteId: number, body: CreateQuoteBody) {
+  return apiRequest<QuoteDetail>(`/api/quotes/${quoteId}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}

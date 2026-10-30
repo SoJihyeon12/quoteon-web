@@ -386,6 +386,11 @@
   font-weight: 650;
 }
 
+.customer-select:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
 .customer-select:hover {
   border-color: #1f6feb;
   color: #1f6feb;

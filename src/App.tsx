@@ -13,21 +13,23 @@ import SignupPage from './pages/SignupPage.tsx'
 import { consultationDialog } from './consultationDraft.ts'
 import { consultationCustomerId, customerRecordRoute } from './customerList.ts'
 import { quoteIdFromViewPath } from './quoteList.ts'
+import { quoteWorkbenchQuoteId } from './quoteWorkbench.ts'
 
 type Route = {
   pathname: string
   mode: string | null
   dialog: ReturnType<typeof consultationDialog>
   customerId: number | null
+  workbenchQuoteId: number | null
 }
 
 function readRoute(): Route {
   const rawPath = window.location.pathname
   if (rawPath === '/') {
-    return { pathname: '/login', mode: null, dialog: null, customerId: null }
+    return { pathname: '/login', mode: null, dialog: null, customerId: null, workbenchQuoteId: null }
   }
   if (rawPath === '/quotes/new') {
-    return { pathname: '/consultation', mode: 'new', dialog: null, customerId: null }
+    return { pathname: '/consultation', mode: 'new', dialog: null, customerId: null, workbenchQuoteId: null }
   }
   const params = new URLSearchParams(window.location.search)
   return {
@@ -35,6 +37,7 @@ function readRoute(): Route {
     mode: params.get('mode'),
     dialog: consultationDialog(params.get('dialog')),
     customerId: consultationCustomerId(params.get('customerId')),
+    workbenchQuoteId: quoteWorkbenchQuoteId(params.get('quoteId')),
   }
 }
 
@@ -108,7 +111,15 @@ export default function App() {
   }
 
   if (route.pathname === '/consultation') {
-    return <ConsultationPage dialog={route.dialog} customerId={route.customerId} />
+    return (
+      <ConsultationPage
+        key={`${route.mode ?? 'new'}-${route.workbenchQuoteId ?? 0}-${route.customerId ?? 0}`}
+        dialog={route.dialog}
+        customerId={route.workbenchQuoteId === null ? route.customerId : null}
+        quoteId={route.workbenchQuoteId}
+        mode={route.mode}
+      />
+    )
   }
 
   return null
