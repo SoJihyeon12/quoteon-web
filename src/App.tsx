@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
+import AdminCategoryPage from './pages/AdminCategoryPage.tsx'
+import AdminProductDetailPage from './pages/AdminProductDetailPage.tsx'
+import AdminProductFormPage from './pages/AdminProductFormPage.tsx'
+import AdminProductListPage from './pages/AdminProductListPage.tsx'
+import AdminDashboardPage from './pages/AdminDashboardPage.tsx'
 import AdminHomePage from './pages/AdminHomePage.tsx'
+import AdminMemberEditPage from './pages/AdminMemberEditPage.tsx'
+import AdminMemberListPage from './pages/AdminMemberListPage.tsx'
 import ConsultationPage from './pages/ConsultationPage.tsx'
 import CustomerDetailPage from './pages/CustomerDetailPage.tsx'
 import CustomerListPage from './pages/CustomerListPage.tsx'
@@ -10,6 +17,7 @@ import QuotePreviewPage from './pages/QuotePreviewPage.tsx'
 import QuoteViewPage from './pages/QuoteViewPage.tsx'
 import RestrictedPage from './pages/RestrictedPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
+import { adminProductIdFromDetailPath, adminProductIdFromEditPath, memberIdFromEditPath } from './adminMenu.ts'
 import { consultationDialog } from './consultationDraft.ts'
 import { consultationCustomerId, customerRecordRoute } from './customerList.ts'
 import { quoteIdFromViewPath } from './quoteList.ts'
@@ -79,7 +87,42 @@ export default function App() {
   }
 
   if (route.pathname === '/admin/dashboard') {
+    return <AdminDashboardPage />
+  }
+
+  if (route.pathname === '/admin/categories') {
+    return <AdminCategoryPage />
+  }
+
+  if (route.pathname === '/admin/products/new') {
+    return <AdminProductFormPage productId={null} />
+  }
+
+  const productEditId = adminProductIdFromEditPath(route.pathname)
+  if (productEditId !== null) {
+    return <AdminProductFormPage key={`edit-${productEditId}`} productId={productEditId} />
+  }
+
+  const productId = adminProductIdFromDetailPath(route.pathname)
+  if (productId !== null) {
+    return <AdminProductDetailPage key={productId} productId={productId} />
+  }
+
+  if (route.pathname === '/admin/products') {
+    return <AdminProductListPage />
+  }
+
+  if (route.pathname === '/admin/members/pending') {
     return <AdminHomePage />
+  }
+
+  if (route.pathname === '/admin/members') {
+    return <AdminMemberListPage />
+  }
+
+  const memberEditId = memberIdFromEditPath(route.pathname)
+  if (memberEditId !== null) {
+    return <AdminMemberEditPage key={memberEditId} memberId={memberEditId} />
   }
 
   if (route.pathname === '/quotes/my') {

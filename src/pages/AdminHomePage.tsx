@@ -5,11 +5,11 @@ import {
   formatCreatedAt,
   type PendingMember,
 } from '../adminMemberList.ts'
+import { ADMIN_PENDING_PATH } from '../adminMenu.ts'
 import { approveMember, fetchPendingMembers, rejectMember } from '../api/adminMembers.ts'
-import { fetchCurrentMember, logout } from '../api/auth.ts'
-import type { Member } from '../api/types.ts'
-import { navigate } from '../navigation.ts'
-import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
+import { redirectOnAccessFailure } from '../session.ts'
+import AdminMemberTabs from './AdminMemberTabs.tsx'
+import AdminShell from './AdminShell.tsx'
 import './AdminHomePage.css'
 import './LoginPage.css'
 import './StatusPage.css'
@@ -21,8 +21,14 @@ type MemberAction = {
 }
 
 export default function AdminHomePage() {
-  const [member, setMember] = useState<Member | null>(null)
-  const [notice, setNotice] = useState('로그인 상태를 확인하는 중입니다.')
+  return (
+    <AdminShell currentPath={ADMIN_PENDING_PATH}>
+      <PendingMemberList />
+    </AdminShell>
+  )
+}
+
+function PendingMemberList() {
   const [keywordInput, setKeywordInput] = useState('')
   const [keyword, setKeyword] = useState('')
   const [page, setPage] = useState(0)
@@ -37,26 +43,6 @@ export default function AdminHomePage() {
   const acting = useRef(false)
 
   useEffect(() => {
-    let cancelled = false
-    fetchCurrentMember().then((result) => {
-      if (cancelled || redirectUnless(result, (current) => current.status === 'ACTIVE' && current.role === 'ROLE_ADMIN')) {
-        return
-      }
-      if (!result.ok) {
-        setNotice(result.error?.message || '로그인 상태를 확인할 수 없습니다.')
-        return
-      }
-      setMember(result.data)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!member) {
-      return
-    }
     let cancelled = false
     fetchPendingMembers(page, keyword).then((result) => {
       if (cancelled) {
@@ -85,7 +71,7 @@ export default function AdminHomePage() {
     return () => {
       cancelled = true
     }
-  }, [member, page, keyword, reloadKey])
+  }, [page, keyword, reloadKey])
 
   useEffect(() => {
     if (!confirming) {
@@ -107,15 +93,6 @@ export default function AdminHomePage() {
     setPage(0)
     setKeyword(keywordInput.trim())
     setReloadKey((current) => current + 1)
-  }
-
-  async function handleLogout() {
-    const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
-      return
-    }
-    setActionMessage(result.error?.message || '로그아웃하지 못했습니다.')
   }
 
   async function handleConfirm() {
@@ -147,40 +124,13 @@ export default function AdminHomePage() {
     }
   }
 
-  if (!member) {
-    return (
-      <main className="login-page">
-        <section className="login-card" aria-labelledby="admin-title">
-          <p className="login-logo">
-            Quote<span>On</span>
-          </p>
-          <header className="login-header">
-            <h1 id="admin-title">관리자</h1>
-            <p>{notice}</p>
-          </header>
-        </section>
-      </main>
-    )
-  }
-
   const emptyMessage = keyword
     ? '검색 결과가 없습니다.'
     : '승인 대기 회원이 없습니다.'
   const confirmLabel = confirming?.kind === 'approve' ? '승인' : '거절'
 
   return (
-    <main className="admin-page">
-      <header className="admin-header">
-        <p className="login-logo">
-          Quote<span>On</span>
-        </p>
-        <p className="admin-user">
-          {member.name}
-          <button type="button" className="admin-logout" onClick={handleLogout}>
-            로그아웃
-          </button>
-        </p>
-      </header>
+    <>
       <header className="admin-heading">
         <h1>가입 승인 대기</h1>
         <p>이름, 이메일, 회사명으로 승인 대기 회원을 찾고 처리할 수 있습니다.</p>
@@ -201,6 +151,7 @@ export default function AdminHomePage() {
           검색
         </button>
       </form>
+      <AdminMemberTabs currentPath={ADMIN_PENDING_PATH} />
 
       {actionMessage ? (
         <p className="admin-message" role="alert">
@@ -325,6 +276,6 @@ export default function AdminHomePage() {
           </div>
         </div>
       ) : null}
-    </main>
+    </>
   )
 }

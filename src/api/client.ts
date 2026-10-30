@@ -52,7 +52,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     if (token) {
       headers.set(CSRF_HEADER, token)
     }
-    if (init.body != null && !headers.has('Content-Type')) {
+    if (init.body != null && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json')
     }
   }
