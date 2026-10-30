@@ -5,6 +5,7 @@ import {
   consultationCustomerId,
   customerErrorMessage,
   customerSummaryFromDetail,
+  customerDeactivatePath,
   customerDetailPath,
   customerEditPath,
   customerRecordRoute,
@@ -39,6 +40,10 @@ test('고객 상세와 수정 경로는 고객 번호로 구분한다', () => {
   assert.equal(customerRecordRoute('/customers/new'), null)
   assert.equal(customerRecordRoute('/customers/0'), null)
 })
+test('고객 비활성화 요청은 삭제 없이 고객 번호의 비활성화 경로를 쓴다', () => {
+  assert.equal(customerDeactivatePath(12), '/api/customers/12/deactivate')
+})
+
 test('고객 목록의 견적 시작은 상담 화면에 고객 번호를 전달한다', () => {
   assert.equal(quoteFromCustomerPath(12), '/consultation?mode=new&customerId=12')
   assert.equal(consultationCustomerId('12'), 12)

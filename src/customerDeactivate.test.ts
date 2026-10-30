@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { deactivateCustomer } from './api/customers.ts'
 import type { ApiError } from './api/types.ts'
 import {
   CUSTOMER_DEACTIVATE_MESSAGE,
@@ -21,6 +22,10 @@ function failure(status: number, code: string, message: string) {
   }
   return { ok: false as const, status, error }
 }
+
+test('고객 상세 화면이 부르는 비활성화 함수가 내보내져 있다', () => {
+  assert.equal(typeof deactivateCustomer, 'function')
+})
 
 test('확인 팝업이 열려 있고 요청 중이 아닐 때만 비활성화를 호출한다', () => {
   assert.equal(canConfirmDeactivate(false, false), false)

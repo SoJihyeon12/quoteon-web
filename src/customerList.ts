@@ -40,6 +40,10 @@ export function customerEditPath(customerId: number) {
   return `/customers/${customerId}/edit`
 }
 
+export function customerDeactivatePath(customerId: number) {
+  return `/api/customers/${customerId}/deactivate`
+}
+
 export function customerSummaryFromDetail(customer: {
   id: number
   name: string

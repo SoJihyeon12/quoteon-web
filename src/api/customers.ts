@@ -1,5 +1,10 @@
 import type { CreateCustomerBody } from '../customerForm.ts'
-import { CUSTOMER_PAGE_SIZE, customersPath, type CustomerPage } from '../customerList.ts'
+import {
+  CUSTOMER_PAGE_SIZE,
+  customerDeactivatePath,
+  customersPath,
+  type CustomerPage,
+} from '../customerList.ts'
 import { apiRequest } from './client.ts'
 
 export type CreatedCustomer = {
@@ -31,5 +36,11 @@ export function updateCustomer(customerId: number, body: CreateCustomerBody) {
   return apiRequest<CreatedCustomer>(`/api/customers/${customerId}`, {
     method: 'PUT',
     body: JSON.stringify(body),
+  })
+}
+
+export function deactivateCustomer(customerId: number) {
+  return apiRequest<CreatedCustomer>(customerDeactivatePath(customerId), {
+    method: 'POST',
   })
 }
