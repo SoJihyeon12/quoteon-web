@@ -747,6 +747,11 @@
   cursor: default;
 }
 
+.admin-quote-detail h3 {
+  margin: 20px 0 0;
+  font-size: 16px;
+}
+
 .admin-pager button {
   height: 32px;
   padding: 0 10px;

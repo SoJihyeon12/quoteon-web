@@ -30,7 +30,10 @@ test('관리자 상단 메뉴는 대시보드, 사용자, 제품, 견적서만 �
   assert.equal(ADMIN_MENU.find((item) => item.label === '대시보드')?.path, '/admin/dashboard')
   assert.equal(ADMIN_MENU.find((item) => item.label === '사용자 관리')?.path, '/admin/members')
   assert.equal(ADMIN_MENU.find((item) => item.label === '제품 관리')?.path, '/admin/products')
-  assert.equal(ADMIN_MENU.find((item) => item.label === '견적서 관리')?.path, null)
+  assert.equal(ADMIN_MENU.find((item) => item.label === '견적서 관리')?.path, '/admin/quotes')
+  assert.equal(adminNavIsCurrent('/admin/quotes', '/admin/quotes'), true)
+  assert.equal(adminNavIsCurrent('/admin/quotes', '/admin/quotes/15'), true)
+  assert.equal(adminNavIsCurrent('/admin/quotes', '/admin/products'), false)
 })
 
 test('사용자 관리 탭은 가입 승인 대기와 전체 사용자를 기존 경로로 연다', () => {

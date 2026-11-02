@@ -4,6 +4,7 @@ export const ADMIN_PENDING_PATH = '/admin/members/pending'
 export const ADMIN_CATEGORIES_PATH = '/admin/categories'
 export const ADMIN_PRODUCTS_PATH = '/admin/products'
 export const ADMIN_PRODUCT_NEW_PATH = '/admin/products/new'
+export const ADMIN_QUOTES_PATH = '/admin/quotes'
 
 export type AdminMenuItem = {
   label: string
@@ -14,7 +15,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
   { label: '대시보드', path: ADMIN_DASHBOARD_PATH },
   { label: '사용자 관리', path: ADMIN_MEMBERS_PATH },
   { label: '제품 관리', path: ADMIN_PRODUCTS_PATH },
-  { label: '견적서 관리', path: null },
+  { label: '견적서 관리', path: ADMIN_QUOTES_PATH },
 ]
 
 export const ADMIN_MEMBER_TABS = [
@@ -79,7 +80,26 @@ export function memberIdFromEditPath(pathname: string) {
   return memberId
 }
 
+export function adminQuoteDetailPath(quoteId: number) {
+  return `/admin/quotes/${quoteId}`
+}
+
+export function adminQuoteIdFromDetailPath(pathname: string) {
+  const match = /^\/admin\/quotes\/(\d+)$/.exec(pathname)
+  if (!match) {
+    return null
+  }
+  const quoteId = Number(match[1])
+  if (!Number.isSafeInteger(quoteId) || quoteId <= 0) {
+    return null
+  }
+  return quoteId
+}
+
 export function adminNavIsCurrent(itemPath: string, currentPath: string) {
+  if (itemPath === ADMIN_QUOTES_PATH) {
+    return currentPath === ADMIN_QUOTES_PATH || adminQuoteIdFromDetailPath(currentPath) !== null
+  }
   if (itemPath === ADMIN_MEMBERS_PATH) {
     return currentPath === ADMIN_MEMBERS_PATH
       || currentPath === ADMIN_PENDING_PATH

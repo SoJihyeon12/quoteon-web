@@ -3,6 +3,8 @@ import AdminCategoryPage from './pages/AdminCategoryPage.tsx'
 import AdminProductDetailPage from './pages/AdminProductDetailPage.tsx'
 import AdminProductFormPage from './pages/AdminProductFormPage.tsx'
 import AdminProductListPage from './pages/AdminProductListPage.tsx'
+import AdminQuoteDetailPage from './pages/AdminQuoteDetailPage.tsx'
+import AdminQuoteListPage from './pages/AdminQuoteListPage.tsx'
 import AdminDashboardPage from './pages/AdminDashboardPage.tsx'
 import AdminHomePage from './pages/AdminHomePage.tsx'
 import AdminMemberEditPage from './pages/AdminMemberEditPage.tsx'
@@ -17,7 +19,12 @@ import QuotePreviewPage from './pages/QuotePreviewPage.tsx'
 import QuoteViewPage from './pages/QuoteViewPage.tsx'
 import RestrictedPage from './pages/RestrictedPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
-import { adminProductIdFromDetailPath, adminProductIdFromEditPath, memberIdFromEditPath } from './adminMenu.ts'
+import {
+  adminProductIdFromDetailPath,
+  adminProductIdFromEditPath,
+  adminQuoteIdFromDetailPath,
+  memberIdFromEditPath,
+} from './adminMenu.ts'
 import { consultationDialog } from './consultationDraft.ts'
 import { consultationCustomerId, customerRecordRoute } from './customerList.ts'
 import { quoteIdFromViewPath } from './quoteList.ts'
@@ -110,6 +117,15 @@ export default function App() {
 
   if (route.pathname === '/admin/products') {
     return <AdminProductListPage />
+  }
+
+  const adminQuoteId = adminQuoteIdFromDetailPath(route.pathname)
+  if (adminQuoteId !== null) {
+    return <AdminQuoteDetailPage key={adminQuoteId} quoteId={adminQuoteId} />
+  }
+
+  if (route.pathname === '/admin/quotes') {
+    return <AdminQuoteListPage />
   }
 
   if (route.pathname === '/admin/members/pending') {
