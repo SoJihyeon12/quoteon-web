@@ -46,6 +46,35 @@
   }
 }
 
+.quote-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.quote-downloads button {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #12263f;
+  border-radius: 6px;
+  background: #fff;
+  color: #12263f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quote-downloads button:disabled {
+  color: #8b9aab;
+  border-color: #d5deea;
+}
+
+.quote-download-message {
+  margin: 12px 0 0;
+  color: #b42318;
+  font-size: 14px;
+}
+
 .quote-view-actions {
   display: flex;
   flex-wrap: wrap;

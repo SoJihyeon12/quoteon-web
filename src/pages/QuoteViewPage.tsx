@@ -1,7 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fetchCurrentMember, logout } from '../api/auth.ts'
-import { fetchQuote, type QuoteDetail } from '../api/quotes.ts'
+import { downloadQuote, fetchQuote, type QuoteDetail } from '../api/quotes.ts'
 import { formatAmount, quoteErrorMessage, quoteStatusLabel } from '../quoteList.ts'
+import {
+  canStartSalesQuoteDownload,
+  salesQuoteDownloadError,
+  salesQuoteDownloadReady,
+  saveSalesQuoteFile,
+  type SalesQuoteDownloadKind,
+} from '../quoteDownload.ts'
 import { canEditStoredQuote, quoteEditPath, quoteRewritePath } from '../quoteWorkbench.ts'
 import { navigate } from '../navigation.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
@@ -24,6 +31,9 @@ export default function QuoteViewPage({ quoteId }: { quoteId: number }) {
   const [viewState, setViewState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [viewMessage, setViewMessage] = useState('')
   const [menuNotice, setMenuNotice] = useState('')
+  const [downloading, setDownloading] = useState(false)
+  const [downloadMessage, setDownloadMessage] = useState('')
+  const downloadRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -70,6 +80,39 @@ export default function QuoteViewPage({ quoteId }: { quoteId: number }) {
       cancelled = true
     }
   }, [ready, quoteId])
+
+  async function download(kind: SalesQuoteDownloadKind) {
+    if (!canStartSalesQuoteDownload(downloadRef.current)) {
+      return
+    }
+    downloadRef.current = true
+    setDownloading(true)
+    setDownloadMessage('')
+    try {
+      const result = await downloadQuote(quoteId, kind)
+      if (redirectOnAccessFailure(result)) {
+        return
+      }
+      if (!result.ok) {
+        setDownloadMessage(salesQuoteDownloadError(result))
+        return
+      }
+      const ready = salesQuoteDownloadReady(
+        kind,
+        result.data.contentType,
+        result.data.disposition,
+        result.data.bytes,
+      )
+      if (!ready) {
+        setDownloadMessage(salesQuoteDownloadError({ ok: false, status: result.status, error: null }))
+        return
+      }
+      saveSalesQuoteFile(ready.filename, result.data.bytes, ready.mediaType)
+    } finally {
+      downloadRef.current = false
+      setDownloading(false)
+    }
+  }
 
   async function handleLogout() {
     const result = await logout()
@@ -145,6 +188,22 @@ export default function QuoteViewPage({ quoteId }: { quoteId: number }) {
         ) : null}
         {viewState === 'ready' && quote ? (
           <>
+            <div className="quote-downloads">
+              <button type="button" disabled={downloading} onClick={() => void download('pdf')}>
+                PDF
+              </button>
+              <button type="button" disabled={downloading} onClick={() => void download('jpeg')}>
+                JPEG
+              </button>
+              <button type="button" disabled={downloading} onClick={() => void download('png')}>
+                PNG
+              </button>
+            </div>
+            {downloadMessage ? (
+              <p className="quote-download-message" role="alert">
+                {downloadMessage}
+              </p>
+            ) : null}
             <dl className="quote-view-meta">
               <div>
                 <dt>견적번호</dt>

@@ -1,6 +1,7 @@
 import type { CreateQuoteBody } from '../quoteForm.ts'
+import { salesQuoteDownloadPath, type SalesQuoteDownloadKind } from '../quoteDownload.ts'
 import { QUOTE_PAGE_SIZE, quotesPath, type QuotePage } from '../quoteList.ts'
-import { apiRequest } from './client.ts'
+import { apiDownload, apiRequest } from './client.ts'
 
 export type CreatedQuote = {
   id: number
@@ -35,6 +36,10 @@ export function fetchQuotes(page: number) {
 
 export function fetchQuote(quoteId: number) {
   return apiRequest<QuoteDetail>(`/api/quotes/${quoteId}`)
+}
+
+export function downloadQuote(quoteId: number, kind: SalesQuoteDownloadKind) {
+  return apiDownload(salesQuoteDownloadPath(quoteId, kind))
 }
 
 export function createQuote(body: CreateQuoteBody) {

@@ -87,3 +87,50 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
   return { ok: true, status: response.status, data: body as T }
 }
+
+export type DownloadPayload = {
+  bytes: Uint8Array
+  contentType: string
+  disposition: string | null
+}
+
+export async function apiDownload(path: string): Promise<ApiResult<DownloadPayload>> {
+  let response: Response
+  try {
+    response = await fetch(path, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: { Accept: 'application/pdf, image/jpeg, image/png, application/json' },
+    })
+  } catch {
+    return { ok: false, status: 0, error: null }
+  }
+
+  const contentType = response.headers.get('Content-Type') ?? ''
+  const mediaType = contentType.split(';')[0].trim().toLowerCase()
+  const fileResponse = response.ok && (
+    mediaType === 'application/pdf' || mediaType === 'image/jpeg' || mediaType === 'image/png'
+  )
+  if (!fileResponse) {
+    const text = await response.text()
+    let body: unknown = null
+    if (text) {
+      try {
+        body = JSON.parse(text)
+      } catch {
+        body = null
+      }
+    }
+    return { ok: false, status: response.status, error: isApiError(body) ? body : null }
+  }
+
+  return {
+    ok: true,
+    status: response.status,
+    data: {
+      bytes: new Uint8Array(await response.arrayBuffer()),
+      contentType,
+      disposition: response.headers.get('Content-Disposition'),
+    },
+  }
+}
