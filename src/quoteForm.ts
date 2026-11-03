@@ -12,6 +12,7 @@ export type CreateQuoteBody = {
   customerId: number
   quoteDate: string
   items: CreateQuoteItemBody[]
+  memo?: string
 }
 
 export type QuotePrice = {
@@ -49,10 +50,18 @@ export function priceQuote(lines: QuotePriceLine[]): QuotePrice {
   }
 }
 
+export const RECOVERED_SPECIFICATION = 'RECOVERED'
+export const RECOVERED_SPECIFICATION_NOTE = '현재 제품 정보로 복구'
+
+export function recoveredSpecificationNote(source: string | null | undefined) {
+  return source === RECOVERED_SPECIFICATION ? RECOVERED_SPECIFICATION_NOTE : ''
+}
+
 export function buildCreateQuoteBody(input: {
   customerId: string
   quoteDate: string
   items: { productId: number; quantity: string }[]
+  memo?: string
 }): { ok: true; body: CreateQuoteBody } | { ok: false; message: string } {
   const customerId = parseCustomerId(input.customerId)
   if (customerId === null) {
@@ -82,12 +91,14 @@ export function buildCreateQuoteBody(input: {
     items.push({ productId: item.productId, quantity })
   }
 
+  const memo = input.memo?.trim() ?? ''
   return {
     ok: true,
     body: {
       customerId,
       quoteDate: input.quoteDate.trim(),
       items,
+      ...(memo ? { memo } : {}),
     },
   }
 }

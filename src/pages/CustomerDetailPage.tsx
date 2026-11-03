@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
-import { fetchCurrentMember, logout } from '../api/auth.ts'
+import { fetchCurrentMember } from '../api/auth.ts'
+import LogoutButton from '../components/LogoutButton.tsx'
 import { deactivateCustomer, fetchCustomer, updateCustomer, type CreatedCustomer } from '../api/customers.ts'
 import {
   CUSTOMER_DEACTIVATE_CANCEL,
@@ -37,7 +38,6 @@ export default function CustomerDetailPage({
   const [customer, setCustomer] = useState<CreatedCustomer | null>(null)
   const [viewState, setViewState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [viewMessage, setViewMessage] = useState('')
-  const [menuNotice, setMenuNotice] = useState('')
   const [name, setName] = useState('')
   const [customerType, setCustomerType] = useState('')
   const [phone, setPhone] = useState('')
@@ -102,15 +102,6 @@ export default function CustomerDetailPage({
       cancelled = true
     }
   }, [ready, customerId])
-
-  async function handleLogout() {
-    const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
-      return
-    }
-    setMenuNotice(result.error?.message || '로그아웃하지 못했습니다.')
-  }
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -197,16 +188,9 @@ export default function CustomerDetailPage({
             </svg>
           </span>
           {memberName || '로그인 정보 없음'}
-          <button type="button" className="workbench-logout" onClick={handleLogout}>
-            로그아웃
-          </button>
+          <LogoutButton className="workbench-logout" />
         </p>
       </header>
-      {menuNotice ? (
-        <p className="workbench-menu-notice" role="status">
-          {menuNotice}
-        </p>
-      ) : null}
       <section className="quote-panel" aria-labelledby="customer-detail-title">
         <div className="quote-heading">
           <h1 id="customer-detail-title">{editing ? '고객 정보 수정' : '고객 상세'}</h1>

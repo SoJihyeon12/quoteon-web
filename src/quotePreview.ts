@@ -77,22 +77,25 @@ export function quotePreviewReturnPath(state: unknown) {
 }
 
 export function openQuotePreview(draft: QuotePreviewDraft) {
-  const returnPath = `${window.location.pathname}${window.location.search}`
+  const page = globalThis.window
+  const returnPath = `${page.location.pathname}${page.location.search}`
   const state = previewHistoryState(draft, returnPath)
-  window.history.replaceState(state, '', window.location.href)
-  window.history.pushState(state, '', QUOTE_PREVIEW_PATH)
-  window.dispatchEvent(new PopStateEvent('popstate'))
+  page.history.replaceState(state, '', page.location.href)
+  page.history.pushState(state, '', QUOTE_PREVIEW_PATH)
+  page.dispatchEvent(new Event('popstate'))
 }
 
 export function returnToQuoteWorkbench(draft: QuotePreviewDraft | null) {
-  const returnPath = quotePreviewReturnPath(window.history.state)
-  window.history.pushState(draft ? previewHistoryState(draft, returnPath) : null, '', returnPath)
-  window.dispatchEvent(new PopStateEvent('popstate'))
+  const page = globalThis.window
+  const returnPath = quotePreviewReturnPath(page.history.state)
+  page.history.pushState(draft ? previewHistoryState(draft, returnPath) : null, '', returnPath)
+  page.dispatchEvent(new Event('popstate'))
 }
 
 export function clearQuotePreviewHistory() {
-  if (quotePreviewFromHistory(window.history.state)) {
-    window.history.replaceState(null, '', window.location.href)
+  const page = globalThis.window
+  if (quotePreviewFromHistory(page.history.state)) {
+    page.history.replaceState(null, '', page.location.href)
   }
 }
 

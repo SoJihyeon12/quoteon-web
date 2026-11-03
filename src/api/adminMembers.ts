@@ -26,6 +26,10 @@ export function deactivateMember(memberId: number) {
   return apiRequest<MemberSummary>(`/api/admin/members/${memberId}/deactivate`, { method: 'POST' })
 }
 
+export function activateMember(memberId: number) {
+  return apiRequest<MemberSummary>(`/api/admin/members/${memberId}/activate`, { method: 'POST' })
+}
+
 export function approveMember(memberId: number) {
   return apiRequest<Member>(`/api/admin/members/${memberId}/approve`, { method: 'POST' })
 }

@@ -1,11 +1,51 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { CONNECTION_MESSAGE } from './loginDecision.ts'
-import { formatAmount, quoteErrorMessage, quoteStatusLabel, quotesPath } from './quoteList.ts'
+import { formatAmount, pageAfterQuoteSearch, QUOTE_PAGE_SIZE, quoteErrorMessage, quoteListEmptyMessage, quoteListPageCount, quoteStatusLabel, quoteViewPath, quotesPath } from './quoteList.ts'
 
-test('견적 목록 요청은 page와 size를 쿼리로 붙인다', () => {
-  assert.equal(quotesPath(0, 20), '/api/quotes?page=0&size=20')
-  assert.equal(quotesPath(1, 20), '/api/quotes?page=1&size=20')
+test('내 견적 목록은 첫 페이지와 다음 페이지 모두 10건씩 요청한다', () => {
+  assert.equal(QUOTE_PAGE_SIZE, 10)
+  assert.equal(quotesPath({ page: 0, size: QUOTE_PAGE_SIZE }), '/api/quotes?page=0&size=10')
+  assert.equal(
+    quotesPath({ page: 1, size: QUOTE_PAGE_SIZE, customerName: '   ', quoteDate: '' }),
+    '/api/quotes?page=1&size=10',
+  )
+  assert.equal(quoteViewPath(12), '/quotes/12/view')
+})
+
+test('고객명과 작성일 검색도 페이지당 10건을 요청한다', () => {
+  assert.equal(
+    quotesPath({ page: 0, size: QUOTE_PAGE_SIZE, customerName: ' 김진우 ' }),
+    '/api/quotes?page=0&size=10&customerName=%EA%B9%80%EC%A7%84%EC%9A%B0',
+  )
+  assert.equal(
+    quotesPath({ page: 0, size: QUOTE_PAGE_SIZE, quoteDate: '2026-10-18' }),
+    '/api/quotes?page=0&size=10&quoteDate=2026-10-18',
+  )
+  assert.equal(
+    quotesPath({ page: 0, size: QUOTE_PAGE_SIZE, customerName: '김진우', quoteDate: '2026-10-18' }),
+    '/api/quotes?page=0&size=10&customerName=%EA%B9%80%EC%A7%84%EC%9A%B0&quoteDate=2026-10-18',
+  )
+})
+
+test('검색은 첫 페이지에서 시작하고 페이지 이동은 검색 조건과 10건 크기를 유지한다', () => {
+  assert.equal(pageAfterQuoteSearch(), 0)
+  assert.equal(
+    quotesPath({ page: 2, size: QUOTE_PAGE_SIZE, customerName: '김진우', quoteDate: '2026-10-18' }),
+    '/api/quotes?page=2&size=10&customerName=%EA%B9%80%EC%A7%84%EC%9A%B0&quoteDate=2026-10-18',
+  )
+  assert.equal(quotesPath({ page: 0, size: QUOTE_PAGE_SIZE, customerName: '', quoteDate: '' }), '/api/quotes?page=0&size=10')
+  assert.equal(quoteListPageCount(0), 0)
+  assert.equal(quoteListPageCount(10), 1)
+  assert.equal(quoteListPageCount(11), 2)
+  assert.equal(quoteListPageCount(25), 3)
+})
+
+test('검색 결과가 없으면 검색 안내를, 전체 목록이 비면 등록 안내를 보여 준다', () => {
+  assert.equal(quoteListEmptyMessage('', ''), '등록된 견적서가 없습니다.')
+  assert.equal(quoteListEmptyMessage('김진우', ''), '검색 결과가 없습니다.')
+  assert.equal(quoteListEmptyMessage('', '2026-10-18'), '검색 결과가 없습니다.')
+  assert.equal(quoteListEmptyMessage('  ', '  '), '등록된 견적서가 없습니다.')
 })
 
 test('견적 상태와 금액은 응답 값을 화면 문구로 바꾼다', () => {

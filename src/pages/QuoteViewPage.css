@@ -75,11 +75,181 @@
   font-size: 14px;
 }
 
+.quote-email-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(18, 38, 63, 0.45);
+}
+
+.quote-email-dialog {
+  width: min(100%, 420px);
+  max-height: min(720px, calc(100svh - 48px));
+  overflow: auto;
+  padding: 20px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(18, 38, 63, 0.16);
+}
+
+.quote-email-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quote-email-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.quote-email-head button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: #12263f;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.quote-email-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.quote-email-form label {
+  display: grid;
+  gap: 6px;
+  color: #5d6d80;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quote-email-form input,
+.quote-email-form textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  color: #12263f;
+  font: inherit;
+  font-weight: 500;
+}
+
+.quote-email-form textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.quote-email-form [role='alert'] {
+  margin: 0;
+  color: #b42318;
+  font-size: 14px;
+}
+
+.quote-email-form [role='status'] {
+  margin: 0;
+  color: #1f6feb;
+  font-size: 14px;
+}
+
+.quote-email-history h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.quote-email-history p {
+  margin: 8px 0 0;
+  color: #5d6d80;
+  font-size: 13px;
+}
+
+.quote-email-history ul {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quote-email-history li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #12263f;
+  font-size: 13px;
+}
+
+.quote-email-history li button {
+  margin-left: auto;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #1f6feb;
+  border-radius: 6px;
+  background: #fff;
+  color: #1f6feb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.quote-email-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.quote-email-actions button {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.quote-email-actions button[type='button'] {
+  border: 1px solid #d5deea;
+  background: #fff;
+  color: #12263f;
+}
+
+.quote-email-actions button[type='submit'] {
+  border: 0;
+  background: #1f6feb;
+  color: #fff;
+}
+
+.quote-email-actions button:disabled,
+.quote-email-history li button:disabled {
+  color: #8b9aab;
+  background: #f4f7fb;
+}
+
 .quote-view-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.quote-sent-notice {
+  margin: 12px 0 0;
+  color: #5d6d80;
+  font-size: 14px;
+}
+
+.quote-spec-note {
+  display: block;
+  margin-top: 4px;
+  color: #5d6d80;
+  font-size: 12px;
 }
 
 .quote-rewrite {

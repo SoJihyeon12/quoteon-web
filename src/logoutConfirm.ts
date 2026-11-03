@@ -1,0 +1,5 @@
+export const LOGOUT_TITLE = '로그아웃하시겠습니까?'
+export const LOGOUT_MESSAGE = '로그아웃하면 로그인 화면으로 이동합니다.'
+export const LOGOUT_CANCEL = '취소'
+export const LOGOUT_CONFIRM = '로그아웃'
+export const LOGOUT_FAILED = '로그아웃하지 못했습니다.'

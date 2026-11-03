@@ -543,6 +543,13 @@
   white-space: nowrap;
 }
 
+.quote-spec-note {
+  display: block;
+  margin-top: 4px;
+  color: #5d6d80;
+  font-size: 12px;
+}
+
 .admin-table th {
   background: #f7f9fc;
   color: #5d6d80;
@@ -750,6 +757,41 @@
 .admin-quote-detail h3 {
   margin: 20px 0 0;
   font-size: 16px;
+}
+
+.quote-supplier {
+  width: 100%;
+  max-width: 640px;
+  margin: 12px 0 0;
+  border-collapse: collapse;
+}
+
+.quote-preview-sheet .quote-supplier {
+  margin-top: 20px;
+}
+
+.quote-supplier th,
+.quote-supplier td {
+  padding: 8px 12px;
+  border: 1px solid #d7e0ea;
+  color: #12263f;
+  font-size: 14px;
+  font-weight: 650;
+  text-align: left;
+  white-space: normal;
+}
+
+.quote-supplier th {
+  width: 96px;
+  background: #f7f9fc;
+  color: #5d6d80;
+  font-size: 13px;
+}
+
+.quote-supplier-group {
+  width: 72px;
+  vertical-align: middle;
+  text-align: center;
 }
 
 .admin-quote-downloads {

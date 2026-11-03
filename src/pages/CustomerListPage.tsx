@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { fetchCurrentMember, logout } from '../api/auth.ts'
+import { fetchCurrentMember } from '../api/auth.ts'
+import LogoutButton from '../components/LogoutButton.tsx'
 import { createCustomer, fetchCustomers } from '../api/customers.ts'
 import { CUSTOMER_TYPES, buildCreateCustomerBody } from '../customerForm.ts'
 import {
@@ -31,7 +32,6 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
   const [totalPages, setTotalPages] = useState(0)
   const [listState, setListState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
   const [listMessage, setListMessage] = useState('')
-  const [menuNotice, setMenuNotice] = useState('')
   const [name, setName] = useState('')
   const [customerType, setCustomerType] = useState('')
   const [phone, setPhone] = useState('')
@@ -108,15 +108,6 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
     setReloadKey((current) => current + 1)
   }
 
-  async function handleLogout() {
-    const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
-      return
-    }
-    setMenuNotice(result.error?.message || '로그아웃하지 못했습니다.')
-  }
-
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const built = buildCreateCustomerBody({ name, customerType, phone, email, address, memo })
@@ -165,16 +156,9 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
             </svg>
           </span>
           {memberName || '로그인 정보 없음'}
-          <button type="button" className="workbench-logout" onClick={handleLogout}>
-            로그아웃
-          </button>
+          <LogoutButton className="workbench-logout" />
         </p>
       </header>
-      {menuNotice ? (
-        <p className="workbench-menu-notice" role="status">
-          {menuNotice}
-        </p>
-      ) : null}
       <div className="customer-layout">
         <nav className="category-panel" aria-label="고객 유형">
           <button

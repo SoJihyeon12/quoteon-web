@@ -10,6 +10,7 @@ import {
   createAdminProduct,
   deleteAdminProduct,
   fetchAdminProduct,
+  resumeAdminProduct,
   stopAdminProduct,
   updateAdminProduct,
   uploadProductDetailImage,
@@ -30,19 +31,28 @@ import {
 } from '../adminProduct.ts'
 import {
   canConfirmProductDelete,
+  canConfirmProductResume,
   canConfirmProductStop,
+  canResumeProductSale,
   canStopProductSale,
   PRODUCT_DELETE_ACK,
   PRODUCT_DELETE_CANCEL,
   PRODUCT_DELETE_CONFIRM,
   PRODUCT_DELETE_MESSAGE,
   PRODUCT_DELETE_TITLE,
+  PRODUCT_RESUME_BLOCKED,
+  PRODUCT_RESUME_CANCEL,
+  PRODUCT_RESUME_CONFIRM,
+  PRODUCT_RESUME_MESSAGE,
+  PRODUCT_RESUME_TITLE,
+  PRODUCT_IN_USE_MESSAGE,
   PRODUCT_STOP_BLOCKED,
   PRODUCT_STOP_CANCEL,
   PRODUCT_STOP_CONFIRM,
-  PRODUCT_STOP_MESSAGE,
   PRODUCT_STOP_TITLE,
   productDeleteOutcome,
+  productResumeOutcome,
+  productStopMessage,
   productStopOutcome,
 } from '../productSale.ts'
 import {
@@ -80,13 +90,14 @@ function ProductForm({ productId }: { productId: number | null }) {
   const [specification, setSpecification] = useState('')
   const [description, setDescription] = useState('')
   const [status, setStatus] = useState('')
+  const [usedInQuotes, setUsedInQuotes] = useState(false)
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [loadMessage, setLoadMessage] = useState('')
   const [fieldErrors, setFieldErrors] = useState<ProductFormErrors>({})
   const [formMessage, setFormMessage] = useState('')
   const [saving, setSaving] = useState(false)
   const [acting, setActing] = useState(false)
-  const [dialog, setDialog] = useState<null | 'stop' | 'delete' | 'delete-blocked'>(null)
+  const [dialog, setDialog] = useState<null | 'stop' | 'resume' | 'delete' | 'delete-blocked'>(null)
   const [dialogMessage, setDialogMessage] = useState('')
   const [imagePath, setImagePath] = useState<string | null>(null)
   const [detailImages, setDetailImages] = useState<ProductDetailImage[]>([])
@@ -108,6 +119,7 @@ function ProductForm({ productId }: { productId: number | null }) {
     setCategoryId(String(product.categoryId))
     setName(product.name)
     setProductCode(product.productCode)
+    setUsedInQuotes(Boolean(product.usedInQuotes))
     setUnitPrice(String(product.unitPrice))
     setSalePrice(String(product.salePrice))
     setSpecification(product.specification ?? '')
@@ -314,11 +326,29 @@ function ProductForm({ productId }: { productId: number | null }) {
     setDialog('stop')
   }
 
+  function openResume() {
+    if (productId === null || savingRef.current || actionRef.current || busyRef.current.size > 0) {
+      return
+    }
+    setFormMessage('')
+    if (!canResumeProductSale(status)) {
+      setFormMessage(PRODUCT_RESUME_BLOCKED)
+      return
+    }
+    setDialogMessage('')
+    setDialog('resume')
+  }
+
   function openDelete() {
     if (productId === null || savingRef.current || actionRef.current || busyRef.current.size > 0) {
       return
     }
     setFormMessage('')
+    if (usedInQuotes) {
+      setDialogMessage(PRODUCT_IN_USE_MESSAGE)
+      setDialog('delete-blocked')
+      return
+    }
     setDialogMessage('')
     setDialog('delete')
   }
@@ -337,6 +367,34 @@ function ProductForm({ productId }: { productId: number | null }) {
       }
       const outcome = productStopOutcome(result)
       if (outcome.type === 'stopped' && outcome.product) {
+        applyLoadedProduct(outcome.product)
+        setDialog(null)
+        setDialogMessage('')
+        return
+      }
+      setDialogMessage(outcome.message)
+    } finally {
+      actionRef.current = false
+      if (mountedRef.current) {
+        setActing(false)
+      }
+    }
+  }
+
+  async function confirmResume() {
+    if (productId === null || !canConfirmProductResume(dialog === 'resume', actionRef.current, status)) {
+      return
+    }
+    actionRef.current = true
+    setActing(true)
+    setDialogMessage('')
+    try {
+      const result = await resumeAdminProduct(productId)
+      if (!mountedRef.current || redirectOnAccessFailure(result)) {
+        return
+      }
+      const outcome = productResumeOutcome(result)
+      if (outcome.type === 'resumed' && outcome.product) {
         applyLoadedProduct(outcome.product)
         setDialog(null)
         setDialogMessage('')
@@ -468,14 +526,25 @@ function ProductForm({ productId }: { productId: number | null }) {
           {productId !== null && loadState === 'ready' ? (
             <div className="admin-product-sale">
               <p className="admin-product-status">{productStatusLabel(status)}</p>
-              <button
-                type="button"
-                className="admin-product-stop"
-                disabled={locked || busySlots.length > 0 || !canStopProductSale(status)}
-                onClick={openStop}
-              >
-                판매 중지
-              </button>
+              {canResumeProductSale(status) ? (
+                <button
+                  type="button"
+                  className="admin-product-stop"
+                  disabled={locked || busySlots.length > 0}
+                  onClick={openResume}
+                >
+                  판매 재개
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="admin-product-stop"
+                  disabled={locked || busySlots.length > 0 || !canStopProductSale(status)}
+                  onClick={openStop}
+                >
+                  판매 중지
+                </button>
+              )}
             </div>
           ) : null}
           <button type="button" className="admin-edit-close" onClick={closeForm} disabled={locked}>닫기</button>
@@ -577,7 +646,7 @@ function ProductForm({ productId }: { productId: number | null }) {
         <div className="admin-dialog-backdrop">
           <div className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="product-stop-title">
             <h2 id="product-stop-title">{PRODUCT_STOP_TITLE}</h2>
-            <p>{PRODUCT_STOP_MESSAGE}</p>
+            <p>{productStopMessage(usedInQuotes)}</p>
             {dialogMessage ? <p className="admin-message" role="alert">{dialogMessage}</p> : null}
             <div className="admin-dialog-actions">
               <button type="button" className="admin-dialog-cancel" disabled={acting} onClick={closeDialog}>
@@ -590,6 +659,28 @@ function ProductForm({ productId }: { productId: number | null }) {
                 onClick={() => void confirmStop()}
               >
                 {acting ? '판매 중지 중' : PRODUCT_STOP_CONFIRM}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {dialog === 'resume' ? (
+        <div className="admin-dialog-backdrop">
+          <div className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="product-resume-title">
+            <h2 id="product-resume-title">{PRODUCT_RESUME_TITLE}</h2>
+            <p>{PRODUCT_RESUME_MESSAGE}</p>
+            {dialogMessage ? <p className="admin-message" role="alert">{dialogMessage}</p> : null}
+            <div className="admin-dialog-actions">
+              <button type="button" className="admin-dialog-cancel" disabled={acting} onClick={closeDialog}>
+                {PRODUCT_RESUME_CANCEL}
+              </button>
+              <button
+                type="button"
+                className="admin-dialog-confirm"
+                disabled={!canConfirmProductResume(true, acting, status)}
+                onClick={() => void confirmResume()}
+              >
+                {acting ? '판매 재개 중' : PRODUCT_RESUME_CONFIRM}
               </button>
             </div>
           </div>

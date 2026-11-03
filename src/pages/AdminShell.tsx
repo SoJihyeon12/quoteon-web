@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ADMIN_MENU, adminNavIsCurrent } from '../adminMenu.ts'
-import { fetchCurrentMember, logout } from '../api/auth.ts'
+import { fetchCurrentMember } from '../api/auth.ts'
+import LogoutButton from '../components/LogoutButton.tsx'
 import type { Member } from '../api/types.ts'
 import { navigate } from '../navigation.ts'
 import { redirectUnless } from '../session.ts'
@@ -20,7 +21,6 @@ export default function AdminShell({
 }) {
   const [member, setMember] = useState<Member | null>(null)
   const [notice, setNotice] = useState('로그인 상태를 확인하는 중입니다.')
-  const [menuNotice, setMenuNotice] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -38,15 +38,6 @@ export default function AdminShell({
       cancelled = true
     }
   }, [])
-
-  async function handleLogout() {
-    const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
-      return
-    }
-    setMenuNotice(result.error?.message || '로그아웃하지 못했습니다.')
-  }
 
   if (!member) {
     return (
@@ -95,16 +86,9 @@ export default function AdminShell({
         </nav>
         <p className="admin-user">
           {member.name}
-          <button type="button" className="admin-logout" onClick={handleLogout}>
-            로그아웃
-          </button>
+          <LogoutButton className="admin-logout" />
         </p>
       </header>
-      {menuNotice ? (
-        <p className="admin-message" role="alert">
-          {menuNotice}
-        </p>
-      ) : null}
       {children}
     </main>
   )

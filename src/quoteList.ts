@@ -1,7 +1,7 @@
 import type { ApiResult } from './api/types.ts'
 import { CONNECTION_MESSAGE, CSRF_MESSAGE } from './loginDecision.ts'
 
-export const QUOTE_PAGE_SIZE = 20
+export const QUOTE_PAGE_SIZE = 10
 
 export type QuoteSummary = {
   id: number
@@ -42,11 +42,37 @@ export function quoteIdFromViewPath(pathname: string) {
   return Number.isSafeInteger(quoteId) ? quoteId : null
 }
 
-export function quotesPath(page: number, size: number) {
+export function quotesPath(query: { page: number; size: number; customerName?: string; quoteDate?: string }) {
   const params = new URLSearchParams()
-  params.set('page', String(page))
-  params.set('size', String(size))
+  params.set('page', String(query.page))
+  params.set('size', String(query.size))
+  const customerName = query.customerName?.trim() ?? ''
+  if (customerName) {
+    params.set('customerName', customerName)
+  }
+  const quoteDate = query.quoteDate?.trim() ?? ''
+  if (quoteDate) {
+    params.set('quoteDate', quoteDate)
+  }
   return `/api/quotes?${params.toString()}`
+}
+
+export const QUOTE_LIST_EMPTY = '등록된 견적서가 없습니다.'
+export const QUOTE_SEARCH_EMPTY = '검색 결과가 없습니다.'
+
+export function pageAfterQuoteSearch() {
+  return 0
+}
+
+export function quoteListPageCount(totalElements: number) {
+  if (totalElements <= 0) {
+    return 0
+  }
+  return Math.ceil(totalElements / QUOTE_PAGE_SIZE)
+}
+
+export function quoteListEmptyMessage(customerName: string, quoteDate: string) {
+  return customerName.trim() || quoteDate.trim() ? QUOTE_SEARCH_EMPTY : QUOTE_LIST_EMPTY
 }
 
 export function quoteStatusLabel(status: string) {

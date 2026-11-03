@@ -1,0 +1,60 @@
+.logout-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(15 23 42 / 45%);
+}
+
+.logout-dialog {
+  width: min(100%, 420px);
+  padding: 24px;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+}
+
+.logout-dialog h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.logout-dialog p {
+  margin: 16px 0 0;
+  color: #5d6d80;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.logout-dialog-error {
+  color: #b42318;
+}
+
+.logout-dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.logout-dialog-actions button {
+  min-width: 96px;
+  height: 40px;
+  border: 1px solid #d0d7e2;
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 700;
+}
+
+.logout-dialog-actions button:last-child {
+  border-color: #1f6feb;
+  background: #1f6feb;
+  color: #fff;
+}
+
+.logout-dialog-actions button:disabled {
+  opacity: 0.6;
+}

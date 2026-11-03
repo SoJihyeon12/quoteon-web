@@ -59,6 +59,7 @@ export type AdminProductDetail = {
   description: string | null
   imagePath: string | null
   status: string
+  usedInQuotes?: boolean
   detailImages?: ProductDetailImage[]
 }
 

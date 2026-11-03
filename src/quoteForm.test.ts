@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildCreateQuoteBody, lineAmount, priceQuote } from './quoteForm.ts'
+import { buildCreateQuoteBody, lineAmount, priceQuote, recoveredSpecificationNote } from './quoteForm.ts'
 
 test('제품 금액은 소수 둘째 자리, 부가세는 원 단위 반올림이다', () => {
   assert.equal(lineAmount(15, 1), 15)
@@ -44,6 +44,32 @@ test('견적 생성 본문은 customerId, quoteDate, productId, quantity만 담�
       ],
     })
   }
+})
+
+test('빈 메모는 견적 본문에서 빼고 입력한 메모는 담는다', () => {
+  const withoutMemo = buildCreateQuoteBody({
+    customerId: '12',
+    quoteDate: '2026-10-29',
+    memo: '   ',
+    items: [{ productId: 3, quantity: '1' }],
+  })
+  assert.equal(withoutMemo.ok, true)
+  if (withoutMemo.ok) {
+    assert.equal('memo' in withoutMemo.body, false)
+  }
+  const withMemo = buildCreateQuoteBody({
+    customerId: '12',
+    quoteDate: '2026-10-29',
+    memo: ' 납기 확인 ',
+    items: [{ productId: 3, quantity: '1' }],
+  })
+  assert.equal(withMemo.ok, true)
+  if (withMemo.ok) {
+    assert.equal(withMemo.body.memo, '납기 확인')
+  }
+  assert.equal(recoveredSpecificationNote('SNAPSHOT'), '')
+  assert.equal(recoveredSpecificationNote('RECOVERED'), '현재 제품 정보로 복구')
+  assert.equal(recoveredSpecificationNote(null), '')
 })
 
 test('고객, 견적일, 수량, 중복 제품은 저장 전에 거른다', () => {

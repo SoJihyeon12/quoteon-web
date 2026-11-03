@@ -33,6 +33,7 @@ export type Product = {
   categoryName: string
   imagePath: string | null
   status: string
+  favorited?: boolean
 }
 
 export type ApiResult<T> =

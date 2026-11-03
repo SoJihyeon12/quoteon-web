@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { fetchCurrentMember, logout } from '../api/auth.ts'
-import { navigate } from '../navigation.ts'
+import { fetchCurrentMember } from '../api/auth.ts'
+import LogoutButton from '../components/LogoutButton.tsx'
 import { formatAmount } from '../quoteList.ts'
 import { previewQuote, quotePreviewFromHistory, returnToQuoteWorkbench } from '../quotePreview.ts'
 import { redirectUnless } from '../session.ts'
@@ -21,7 +21,6 @@ function displayText(value: string) {
 export default function QuotePreviewPage() {
   const [memberName, setMemberName] = useState('')
   const [ready, setReady] = useState(false)
-  const [menuNotice, setMenuNotice] = useState('')
   const [draft] = useState(() => quotePreviewFromHistory(window.history.state))
   const preview = draft ? previewQuote(draft) : null
 
@@ -44,15 +43,6 @@ export default function QuotePreviewPage() {
 
   function returnToWorkbench() {
     returnToQuoteWorkbench(draft)
-  }
-
-  async function handleLogout() {
-    const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
-      return
-    }
-    setMenuNotice(result.error?.message || '로그아웃하지 못했습니다.')
   }
 
   return (
@@ -82,16 +72,9 @@ export default function QuotePreviewPage() {
             </svg>
           </span>
           {memberName || '로그인 정보 없음'}
-          <button type="button" className="workbench-logout" onClick={handleLogout}>
-            로그아웃
-          </button>
+          <LogoutButton className="workbench-logout" />
         </p>
       </header>
-      {menuNotice ? (
-        <p className="workbench-menu-notice" role="status">
-          {menuNotice}
-        </p>
-      ) : null}
       <section className="quote-preview-page" aria-labelledby="quote-preview-title">
         {!ready ? (
           <p className="quote-empty" role="status">

@@ -1,6 +1,8 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
-import { fetchCurrentMember, logout } from '../api/auth.ts'
+import { fetchCurrentMember } from '../api/auth.ts'
 import { fetchCategories, fetchProducts } from '../api/catalog.ts'
+import LogoutButton from '../components/LogoutButton.tsx'
+import { FAVORITES_EMPTY } from '../favorites.ts'
 import { fetchCustomer, fetchCustomers } from '../api/customers.ts'
 import { createQuote, fetchQuote, updateQuote } from '../api/quotes.ts'
 import type { ApiResult, Category, Product } from '../api/types.ts'
@@ -33,10 +35,10 @@ import {
   quoteSaveAction,
   workbenchDraftFromQuote,
 } from '../quoteWorkbench.ts'
+import { addedLineQuantity, pageAfterCatalogFilter } from '../productCatalog.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
+import ProductDetailDialog from './ProductDetailDialog.tsx'
 import './ConsultationPage.css'
-
-const FAVORITES_UNAVAILABLE = '즐겨찾기 API가 연결되지 않아 즐겨찾기 제품을 불러올 수 없습니다.'
 
 function todayLabel() {
   const now = new Date()
@@ -90,13 +92,20 @@ export default function ConsultationPage({
   const [memberName, setMemberName] = useState('')
   const [sessionReady, setSessionReady] = useState(false)
   const [productKeyword, setProductKeyword] = useState('')
-  const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [favoritesOnly, setFavoritesOnly] = useState(
+    () => new URLSearchParams(window.location.search).get('filter') === 'favorites',
+  )
   const [categories, setCategories] = useState<Category[]>([])
   const [categoryNotice, setCategoryNotice] = useState('카테고리를 불러오는 중입니다.')
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+  const [submittedProductKeyword, setSubmittedProductKeyword] = useState('')
+  const [productPage, setProductPage] = useState(0)
+  const [productTotalPages, setProductTotalPages] = useState(0)
+  const [productReloadKey, setProductReloadKey] = useState(0)
   const [products, setProducts] = useState<Product[]>([])
   const [productNotice, setProductNotice] = useState('제품 목록을 확인하는 중입니다.')
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({})
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
   const [restoredDraft] = useState(() => quotePreviewFromHistory(window.history.state))
   const loadsStoredQuote =
     (mode === QUOTE_EDIT_MODE || mode === QUOTE_REWRITE_MODE) && quoteId !== null && !restoredDraft
@@ -118,7 +127,6 @@ export default function ConsultationPage({
   const [customerTotalPages, setCustomerTotalPages] = useState(0)
   const [customerListState, setCustomerListState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
   const [customerNotice, setCustomerNotice] = useState('')
-  const [menuNotice, setMenuNotice] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -135,11 +143,11 @@ export default function ConsultationPage({
       }
 
       setMemberName(me.data.name)
-      const [categoryResult, productResult] = await Promise.all([fetchCategories(), fetchProducts()])
+      const categoryResult = await fetchCategories()
       if (cancelled) {
         return
       }
-      if (redirectOnAccessFailure(categoryResult) || redirectOnAccessFailure(productResult)) {
+      if (redirectOnAccessFailure(categoryResult)) {
         return
       }
 
@@ -154,16 +162,6 @@ export default function ConsultationPage({
         setCategoryNotice('')
       }
 
-      if (!productResult.ok) {
-        setProducts([])
-        setProductNotice(failureMessage(productResult, '제품 목록을 불러오지 못했습니다.'))
-      } else if (productResult.data.length === 0) {
-        setProducts([])
-        setProductNotice('등록된 판매 제품이 없습니다.')
-      } else {
-        setProducts(productResult.data)
-        setProductNotice('')
-      }
       setSessionReady(true)
     }
 
@@ -172,6 +170,54 @@ export default function ConsultationPage({
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (!sessionReady) {
+      return
+    }
+    let cancelled = false
+    fetchProducts({
+      page: productPage,
+      keyword: submittedProductKeyword,
+      categoryId: selectedCategoryId,
+      favoriteOnly: favoritesOnly,
+    }).then((result) => {
+      if (cancelled) {
+        return
+      }
+      if (redirectOnAccessFailure(result)) {
+        return
+      }
+      if (!result.ok || !Array.isArray(result.data.items)) {
+        setProducts([])
+        setProductTotalPages(0)
+        setProductNotice(failureMessage(result, '제품 목록을 불러오지 못했습니다.'))
+        return
+      }
+      if (productPage > 0 && result.data.totalPages > 0 && productPage >= result.data.totalPages) {
+        setProductPage(result.data.totalPages - 1)
+        return
+      }
+      setProducts(result.data.items)
+      setProductTotalPages(result.data.totalPages)
+      if (result.data.items.length === 0) {
+        setProductNotice(
+          favoritesOnly
+            ? FAVORITES_EMPTY
+            : submittedProductKeyword.trim()
+              ? '검색 결과가 없습니다.'
+              : selectedCategoryId !== null
+                ? '이 카테고리에 표시할 제품이 없습니다.'
+                : '등록된 판매 제품이 없습니다.',
+        )
+        return
+      }
+      setProductNotice('')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [sessionReady, favoritesOnly, productPage, submittedProductKeyword, selectedCategoryId, productReloadKey])
 
   useEffect(() => {
     if (!sessionReady || customerId === null || quoteId !== null) {
@@ -236,7 +282,7 @@ export default function ConsultationPage({
       setWrittenOn(draft.writtenOn)
       setQuoteLines(draft.lines)
       setSelectedCustomer(draft.customer)
-      setMemo('')
+      setMemo(draft.memo)
       const customerResult = await fetchCustomer(result.data.customerId)
       if (cancelled) {
         return
@@ -391,8 +437,13 @@ export default function ConsultationPage({
     setCustomerPopupOpen(false)
   }
 
-  function addProduct(product: Product) {
+  function addProduct(product: Product, quantity = '1') {
+    if (product.status !== 'ACTIVE' || !validQuantity(quantity)) {
+      setQuoteNotice('판매 중인 제품만 1개 이상의 수량으로 견적에 추가할 수 있습니다.')
+      return
+    }
     setQuoteNotice('')
+    setSelectedProductId(null)
     setQuoteLines((current) => {
       const existing = current.find((line) => line.productId === product.id)
       if (!existing) {
@@ -403,13 +454,13 @@ export default function ConsultationPage({
             productCode: product.productCode,
             name: product.name,
             salePrice: product.salePrice,
-            quantity: '1',
+            quantity,
           },
         ]
       }
-      const next = validQuantity(existing.quantity) ? Number(existing.quantity) + 1 : 1
+      const next = addedLineQuantity(existing.quantity, quantity) ?? quantity
       return current.map((line) =>
-        line.productId === product.id ? { ...line, quantity: String(next) } : line,
+        line.productId === product.id ? { ...line, quantity: next } : line,
       )
     })
   }
@@ -418,6 +469,7 @@ export default function ConsultationPage({
     const built = buildCreateQuoteBody({
       customerId: selectedCustomer ? String(selectedCustomer.id) : '',
       quoteDate: writtenOn,
+      memo,
       items: quoteLines.map((line) => ({ productId: line.productId, quantity: line.quantity })),
     })
     if (!built.ok) {
@@ -449,50 +501,45 @@ export default function ConsultationPage({
     navigate('/quotes/my')
   }
 
-  async function handleLogout() {
-    const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
-      return
-    }
-    setMenuNotice(result.error?.message || '로그아웃하지 못했습니다.')
-  }
-
-  async function handleProductSearch(event: FormEvent<HTMLFormElement>) {
+  function handleProductSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!sessionReady) {
       setProducts([])
       setProductNotice('승인된 로그인 세션이 없어 제품을 검색할 수 없습니다.')
       return
     }
-    if (favoritesOnly) {
-      setProductNotice(FAVORITES_UNAVAILABLE)
-      return
+    const nextPage = pageAfterCatalogFilter()
+    setSubmittedProductKeyword(productKeyword)
+    setProductPage(nextPage)
+    if (productPage === nextPage && productKeyword === submittedProductKeyword) {
+      setProductReloadKey((current) => current + 1)
     }
+  }
 
-    setProductNotice('제품 목록을 불러오는 중입니다.')
-    setProducts([])
-    const result = await fetchProducts(productKeyword)
-    if (redirectOnAccessFailure(result)) {
-      return
+  function selectCategory(categoryId: number | null) {
+    const nextPage = pageAfterCatalogFilter()
+    setSelectedCategoryId(categoryId)
+    setProductPage(nextPage)
+  }
+
+  function syncFavoritesFilter(next: boolean) {
+    const params = new URLSearchParams(window.location.search)
+    if (next) {
+      params.set('filter', 'favorites')
+    } else {
+      params.delete('filter')
     }
-    if (!result.ok) {
-      setProducts([])
-      setProductNotice(failureMessage(result, '제품 목록을 불러오지 못했습니다.'))
-      return
-    }
-    setProducts(result.data)
-    setProductNotice(
-      result.data.length === 0
-        ? productKeyword.trim()
-          ? '검색 결과가 없습니다.'
-          : '등록된 판매 제품이 없습니다.'
-        : '',
-    )
+    const query = params.toString()
+    window.history.replaceState(null, '', query ? `${window.location.pathname}?${query}` : window.location.pathname)
   }
 
   function handleFavorites() {
-    setFavoritesOnly((current) => !current)
+    setFavoritesOnly((current) => {
+      const next = !current
+      syncFavoritesFilter(next)
+      setProductPage(pageAfterCatalogFilter())
+      return next
+    })
   }
 
   function handlePreview() {
@@ -526,14 +573,8 @@ export default function ConsultationPage({
     pricedIndex += 1
   }
 
-  const visibleProducts =
-    selectedCategoryId === null ? products : products.filter((product) => product.categoryId === selectedCategoryId)
-  const showProducts = sessionReady && !favoritesOnly && visibleProducts.length > 0 && !productNotice
-  const visibleNotice = !sessionReady
-    ? productNotice
-    : favoritesOnly
-      ? FAVORITES_UNAVAILABLE
-      : productNotice || (visibleProducts.length === 0 ? '이 카테고리에 표시할 제품이 없습니다.' : '')
+  const showProducts = sessionReady && products.length > 0 && !productNotice
+  const visibleNotice = productNotice
 
   function renderCategories(parentId: number | null) {
     return categories
@@ -544,7 +585,7 @@ export default function ConsultationPage({
             type="button"
             className="category-item"
             aria-current={selectedCategoryId === category.id ? 'true' : undefined}
-            onClick={() => setSelectedCategoryId(category.id)}
+            onClick={() => selectCategory(category.id)}
           >
             {category.name}
           </button>
@@ -583,17 +624,9 @@ export default function ConsultationPage({
             </svg>
           </span>
           {memberName || '로그인 정보 없음'}
-          <button type="button" className="workbench-logout" onClick={handleLogout}>
-            로그아웃
-          </button>
+          <LogoutButton className="workbench-logout" />
         </p>
       </header>
-
-      {menuNotice ? (
-        <p className="workbench-menu-notice" role="status">
-          {menuNotice}
-        </p>
-      ) : null}
 
       <div className="workbench-toolbar">
         <form className="workbench-search" onSubmit={handleProductSearch}>
@@ -641,7 +674,7 @@ export default function ConsultationPage({
             type="button"
             className="category-item"
             aria-current={selectedCategoryId === null ? 'true' : undefined}
-            onClick={() => setSelectedCategoryId(null)}
+            onClick={() => selectCategory(null)}
           >
             전체
           </button>
@@ -659,20 +692,22 @@ export default function ConsultationPage({
           </h2>
           {showProducts ? (
             <ul className="product-list">
-              {visibleProducts.map((product) => (
+              {products.map((product) => (
                 <li key={product.id} className="product-card">
-                  {product.imagePath && !failedImages[product.id] ? (
-                    <img
-                      src={product.imagePath}
-                      alt=""
-                      onError={() => setFailedImages((current) => ({ ...current, [product.id]: true }))}
-                    />
-                  ) : (
-                    <span className="product-thumb">이미지 없음</span>
-                  )}
-                  <p className="product-name">{product.name}</p>
-                  <p className="product-code">{product.productCode}</p>
-                  <p className="product-price">{formatPrice(product.salePrice)}</p>
+                  <button type="button" className="product-open" onClick={() => setSelectedProductId(product.id)}>
+                    {product.imagePath && !failedImages[product.id] ? (
+                      <img
+                        src={product.imagePath}
+                        alt=""
+                        onError={() => setFailedImages((current) => ({ ...current, [product.id]: true }))}
+                      />
+                    ) : (
+                      <span className="product-thumb">이미지 없음</span>
+                    )}
+                    <p className="product-name">{product.name}</p>
+                    <p className="product-code">{product.productCode}</p>
+                    <p className="product-price">{formatPrice(product.salePrice)}</p>
+                  </button>
                   <button type="button" className="product-add" onClick={() => addProduct(product)}>
                     담기
                   </button>
@@ -685,11 +720,23 @@ export default function ConsultationPage({
             </div>
           )}
           <div className="pager" aria-label="제품 목록 페이지">
-            <button type="button" disabled>
+            <button
+              type="button"
+              disabled={!sessionReady || productPage <= 0}
+              onClick={() => setProductPage((current) => current - 1)}
+            >
               이전
             </button>
-            <span>{showProducts ? '1' : '표시할 페이지가 없습니다.'}</span>
-            <button type="button" disabled>
+            <span>
+              {!sessionReady || productTotalPages === 0
+                ? '표시할 페이지가 없습니다.'
+                : `${productPage + 1} / ${productTotalPages}`}
+            </span>
+            <button
+              type="button"
+              disabled={!sessionReady || productTotalPages === 0 || productPage + 1 >= productTotalPages}
+              onClick={() => setProductPage((current) => current + 1)}
+            >
               다음
             </button>
           </div>
@@ -738,6 +785,7 @@ export default function ConsultationPage({
                         <strong>{line.name}</strong>
                         <span>{line.productCode}</span>
                       </p>
+                      <p className="quote-line-price">판매가 {formatPrice(line.salePrice)}</p>
                       <button
                         type="button"
                         className="quote-line-remove"
@@ -976,6 +1024,27 @@ export default function ConsultationPage({
             </div>
           </div>
         </div>
+      ) : null}
+      {selectedProductId !== null ? (
+        <ProductDetailDialog
+          productId={selectedProductId}
+          onClose={() => setSelectedProductId(null)}
+          onAdd={(product, quantity) =>
+            addProduct(
+              {
+                id: product.id,
+                productCode: product.productCode,
+                name: product.name,
+                salePrice: product.salePrice,
+                categoryId: 0,
+                categoryName: '',
+                imagePath: product.imagePath,
+                status: product.status,
+              },
+              quantity,
+            )
+          }
+        />
       ) : null}
     </div>
   )

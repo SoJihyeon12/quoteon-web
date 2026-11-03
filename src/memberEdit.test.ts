@@ -6,6 +6,8 @@ import { deactivateMember } from './api/adminMembers.ts'
 import { memberStatusLabel } from './adminMemberList.ts'
 import {
   buildMemberUpdateBody,
+  canActivateMember,
+  canConfirmMemberActivate,
   canConfirmMemberDeactivate,
   canDeactivateMember,
   canSubmitMemberEdit,
@@ -123,6 +125,10 @@ test('활성 회원만 비활성화 확인 후 목록으로 이동하고 그 외
   assert.equal(canDeactivateMember('PENDING'), false)
   assert.equal(canDeactivateMember('REJECTED'), false)
   assert.equal(canDeactivateMember('INACTIVE'), false)
+  assert.equal(canActivateMember('INACTIVE'), true)
+  assert.equal(canActivateMember('ACTIVE'), false)
+  assert.equal(canConfirmMemberActivate(true, false, 'INACTIVE'), true)
+  assert.equal(canConfirmMemberActivate(true, false, 'ACTIVE'), false)
   assert.equal(canConfirmMemberDeactivate(false, false, 'ACTIVE'), false)
   assert.equal(canConfirmMemberDeactivate(true, false, 'ACTIVE'), true)
   assert.equal(canConfirmMemberDeactivate(true, true, 'ACTIVE'), false)

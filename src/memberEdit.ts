@@ -109,12 +109,29 @@ export const MEMBER_DEACTIVATE_CONFIRM = '비활성화'
 export const MEMBER_DEACTIVATE_BLOCKED = '활성 회원만 비활성화할 수 있습니다.'
 export const MEMBER_DEACTIVATE_FAILED = '회원을 비활성화하지 못했습니다.'
 
+export const MEMBER_ACTIVATE_TITLE = '사용자 활성화'
+export const MEMBER_ACTIVATE_NOTE = '활성화하면 다시 로그인할 수 있습니다.'
+export const MEMBER_ACTIVATE_MESSAGE =
+  '활성화하면 로그인과 신규 견적 작성이 다시 가능합니다. 활성화하시겠습니까?'
+export const MEMBER_ACTIVATE_CANCEL = '취소'
+export const MEMBER_ACTIVATE_CONFIRM = '활성화'
+export const MEMBER_ACTIVATE_BLOCKED = '비활성 회원만 활성화할 수 있습니다.'
+export const MEMBER_ACTIVATE_FAILED = '회원을 활성화하지 못했습니다.'
+
 export function canDeactivateMember(status: string) {
   return status === 'ACTIVE'
 }
 
+export function canActivateMember(status: string) {
+  return status === 'INACTIVE'
+}
+
 export function canConfirmMemberDeactivate(confirmOpen: boolean, submitting: boolean, status: string) {
   return confirmOpen && !submitting && canDeactivateMember(status)
+}
+
+export function canConfirmMemberActivate(confirmOpen: boolean, submitting: boolean, status: string) {
+  return confirmOpen && !submitting && canActivateMember(status)
 }
 
 export function memberDeactivateOutcome(result: ApiResult<MemberSummary>) {
@@ -124,6 +141,16 @@ export function memberDeactivateOutcome(result: ApiResult<MemberSummary>) {
   return {
     path: null,
     message: adminErrorMessage(result, MEMBER_DEACTIVATE_FAILED),
+  }
+}
+
+export function memberActivateOutcome(result: ApiResult<MemberSummary>) {
+  if (result.ok) {
+    return { path: ADMIN_MEMBERS_PATH, message: '' }
+  }
+  return {
+    path: null,
+    message: adminErrorMessage(result, MEMBER_ACTIVATE_FAILED),
   }
 }
 

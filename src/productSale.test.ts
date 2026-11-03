@@ -2,10 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { CONNECTION_MESSAGE, CSRF_MESSAGE } from './loginDecision.ts'
 import { PRODUCT_NOT_FOUND } from './adminProduct.ts'
-import { deleteAdminProduct, stopAdminProduct } from './api/adminProducts.ts'
+import { deleteAdminProduct, resumeAdminProduct, stopAdminProduct } from './api/adminProducts.ts'
 import {
   canConfirmProductDelete,
+  canConfirmProductResume,
   canConfirmProductStop,
+  canResumeProductSale,
   canStopProductSale,
   PRODUCT_DELETE_MESSAGE,
   PRODUCT_IN_USE_MESSAGE,
@@ -13,9 +15,17 @@ import {
   PRODUCT_STOP_MESSAGE,
   productDeleteOutcome,
   productDeleteRequest,
+  productResumeOutcome,
+  productResumeRequest,
+  productStopMessage,
   productStopOutcome,
   productStopRequest,
 } from './productSale.ts'
+
+test('판매 중지 안내는 견적 사용 여부에 따라 문구를 나눈다', () => {
+  assert.match(productStopMessage(true), /기존 견적/)
+  assert.match(productStopMessage(false), /새 견적/)
+})
 
 test('판매 중지 확인을 열기 전에는 요청을 만들지 않는다', () => {
   assert.equal(canConfirmProductStop(false, false, 'ACTIVE'), false)
@@ -81,6 +91,39 @@ test('판매 중지 실패는 서버 메시지를 표시한다', () => {
 
   const offline = productStopOutcome({ ok: false, status: 0, error: null })
   assert.equal(offline.message, CONNECTION_MESSAGE)
+})
+
+test('판매 재개는 중지된 제품만 확인하고 같은 관리자 경로로 요청한다', () => {
+  assert.equal(canResumeProductSale('ACTIVE'), false)
+  assert.equal(canResumeProductSale('INACTIVE'), true)
+  assert.equal(canConfirmProductResume(false, false, 'INACTIVE'), false)
+  assert.equal(canConfirmProductResume(true, false, 'INACTIVE'), true)
+  assert.deepEqual(productResumeRequest(15), {
+    method: 'POST',
+    path: '/api/admin/products/15/resume',
+    body: null,
+  })
+  assert.equal(typeof resumeAdminProduct, 'function')
+  const outcome = productResumeOutcome({
+    ok: true,
+    status: 200,
+    data: {
+      id: 15,
+      categoryId: 1,
+      categoryName: '현관',
+      name: '슬라이딩 도어',
+      productCode: 'SH-600',
+      unitPrice: 80000,
+      salePrice: 90000,
+      specification: null,
+      description: null,
+      imagePath: null,
+      status: 'ACTIVE',
+      detailImages: [],
+    },
+  })
+  assert.equal(outcome.type, 'resumed')
+  assert.equal(outcome.product?.status, 'ACTIVE')
 })
 
 test('삭제 확인을 열기 전에는 요청을 만들지 않는다', () => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { fetchCurrentMember, logout } from '../api/auth.ts'
+import { fetchCurrentMember } from '../api/auth.ts'
+import LogoutButton from '../components/LogoutButton.tsx'
 import type { Member } from '../api/types.ts'
-import { navigate } from '../navigation.ts'
 import { redirectUnless } from '../session.ts'
 import './LoginPage.css'
 import './StatusPage.css'
@@ -26,15 +26,6 @@ export default function PendingPage() {
       cancelled = true
     }
   }, [])
-
-  async function handleLogout() {
-    const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
-      return
-    }
-    setNotice(result.error?.message || '로그아웃하지 못했습니다.')
-  }
 
   return (
     <main className="login-page">
@@ -64,9 +55,7 @@ export default function PendingPage() {
         ) : (
           <p className="status-note">{notice}</p>
         )}
-        <button type="button" className="login-submit status-action" onClick={handleLogout}>
-          로그아웃
-        </button>
+        <LogoutButton className="login-submit status-action" />
       </section>
     </main>
   )

@@ -3,9 +3,11 @@ import test from 'node:test'
 import {
   QUOTE_PREVIEW_PATH,
   QUOTE_WORKBENCH_PATH,
+  openQuotePreview,
   previewQuote,
   quotePreviewFromHistory,
   readQuotePreview,
+  returnToQuoteWorkbench,
   type QuotePreviewDraft,
 } from './quotePreview.ts'
 
@@ -47,6 +49,28 @@ test('수량이 계산할 수 없으면 그 줄은 합계에서 빠진다', () =
   assert.equal(preview.totalAmount, 0)
 })
 
+test('미리보기에서 수정하거나 나가면 열었던 상담 작업대와 작성 내용을 복원한다', () => {
+  const paths = [
+    '/consultation?mode=new',
+    '/consultation?mode=edit&quoteId=12',
+    '/consultation?mode=rewrite&quoteId=12',
+  ]
+  for (const path of paths) {
+    const restore = installHistory(`http://localhost${path}`)
+    try {
+      openQuotePreview(draft)
+      assert.equal(globalThis.window.location.pathname, QUOTE_PREVIEW_PATH)
+      const opened = quotePreviewFromHistory(globalThis.window.history.state)
+      assert.deepEqual(opened, draft)
+      returnToQuoteWorkbench(opened)
+      assert.equal(`${globalThis.window.location.pathname}${globalThis.window.location.search}`, path)
+      assert.deepEqual(quotePreviewFromHistory(globalThis.window.history.state), draft)
+    } finally {
+      restore()
+    }
+  }
+})
+
 test('미리보기 저장값은 상담 화면으로 돌아올 때 고객, 제품, 메모를 복원한다', () => {
   const restored = quotePreviewFromHistory({ source: 'quote-preview', draft })
   assert.deepEqual(restored, draft)
@@ -57,3 +81,42 @@ test('미리보기 저장값은 상담 화면으로 돌아올 때 고객, 제품
   assert.equal(QUOTE_PREVIEW_PATH, '/quotes/preview')
   assert.equal(QUOTE_WORKBENCH_PATH, '/consultation?mode=new')
 })
+
+function installHistory(startUrl: string) {
+  const entries: Array<{ url: string; state: unknown }> = [{ url: startUrl, state: null }]
+  let index = 0
+  const original = globalThis.window
+  const page = {
+    location: {
+      get pathname() {
+        return new URL(entries[index].url).pathname
+      },
+      get search() {
+        return new URL(entries[index].url).search
+      },
+      get href() {
+        return entries[index].url
+      },
+    },
+    history: {
+      get state() {
+        return entries[index].state
+      },
+      replaceState(state: unknown, _title: string, url: string) {
+        entries[index] = { url: new URL(url, entries[index].url).href, state }
+      },
+      pushState(state: unknown, _title: string, url: string) {
+        entries.splice(index + 1)
+        entries.push({ url: new URL(url, entries[index].url).href, state })
+        index += 1
+      },
+    },
+    dispatchEvent() {
+      return true
+    },
+  }
+  globalThis.window = page as unknown as Window & typeof globalThis
+  return () => {
+    globalThis.window = original
+  }
+}

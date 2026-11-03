@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
-import { fetchCurrentMember, logout } from '../api/auth.ts'
+import { useEffect, useState, type FormEvent } from 'react'
+import { fetchCurrentMember } from '../api/auth.ts'
+import LogoutButton from '../components/LogoutButton.tsx'
 import { fetchQuotes } from '../api/quotes.ts'
 import {
   formatAmount,
+  pageAfterQuoteSearch,
   quoteErrorMessage,
+  quoteListEmptyMessage,
   quoteStatusLabel,
   quoteViewPath,
   type QuoteSummary,
@@ -21,11 +24,15 @@ export default function QuoteListPage() {
   const [memberName, setMemberName] = useState('')
   const [ready, setReady] = useState(false)
   const [page, setPage] = useState(0)
+  const [customerInput, setCustomerInput] = useState('')
+  const [quoteDateInput, setQuoteDateInput] = useState('')
+  const [customerName, setCustomerName] = useState('')
+  const [quoteDate, setQuoteDate] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
   const [items, setItems] = useState<QuoteSummary[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [listState, setListState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
   const [listMessage, setListMessage] = useState('')
-  const [menuNotice, setMenuNotice] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -51,7 +58,7 @@ export default function QuoteListPage() {
       return
     }
     let cancelled = false
-    fetchQuotes(page).then((result) => {
+    fetchQuotes(page, customerName, quoteDate).then((result) => {
       if (cancelled) {
         return
       }
@@ -78,15 +85,33 @@ export default function QuoteListPage() {
     return () => {
       cancelled = true
     }
-  }, [ready, page])
+  }, [ready, page, customerName, quoteDate, reloadKey])
 
-  async function handleLogout() {
-    const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const nextCustomer = customerInput.trim()
+    const nextDate = quoteDateInput
+    setListState('loading')
+    setPage(pageAfterQuoteSearch())
+    if (page === 0 && nextCustomer === customerName && nextDate === quoteDate) {
+      setReloadKey((current) => current + 1)
       return
     }
-    setMenuNotice(result.error?.message || '로그아웃하지 못했습니다.')
+    setCustomerName(nextCustomer)
+    setQuoteDate(nextDate)
+  }
+
+  function handleReset() {
+    setCustomerInput('')
+    setQuoteDateInput('')
+    setListState('loading')
+    setPage(pageAfterQuoteSearch())
+    if (page === 0 && customerName === '' && quoteDate === '') {
+      setReloadKey((current) => current + 1)
+      return
+    }
+    setCustomerName('')
+    setQuoteDate('')
   }
 
   return (
@@ -116,16 +141,9 @@ export default function QuoteListPage() {
             </svg>
           </span>
           {memberName || '로그인 정보 없음'}
-          <button type="button" className="workbench-logout" onClick={handleLogout}>
-            로그아웃
-          </button>
+          <LogoutButton className="workbench-logout" />
         </p>
       </header>
-      {menuNotice ? (
-        <p className="workbench-menu-notice" role="status">
-          {menuNotice}
-        </p>
-      ) : null}
       <section className="quote-panel" aria-labelledby="quote-list-title">
         <div className="quote-heading">
           <h1 id="quote-list-title">내 견적</h1>
@@ -133,6 +151,28 @@ export default function QuoteListPage() {
             견적서 작성
           </a>
         </div>
+        <form className="quote-search" onSubmit={handleSearch}>
+          <label>
+            고객명
+            <input
+              type="search"
+              value={customerInput}
+              onChange={(event) => setCustomerInput(event.target.value)}
+            />
+          </label>
+          <label>
+            작성일
+            <input
+              type="date"
+              value={quoteDateInput}
+              onChange={(event) => setQuoteDateInput(event.target.value)}
+            />
+          </label>
+          <button type="submit">검색</button>
+          <button type="button" onClick={handleReset}>
+            초기화
+          </button>
+        </form>
         {listState === 'loading' ? (
           <p className="quote-empty" role="status">
             견적서를 불러오는 중입니다.
@@ -140,7 +180,7 @@ export default function QuoteListPage() {
         ) : null}
         {listState === 'empty' ? (
           <p className="quote-empty" role="status">
-            등록된 견적서가 없습니다.
+            {quoteListEmptyMessage(customerName, quoteDate)}
           </p>
         ) : null}
         {listState === 'error' ? (

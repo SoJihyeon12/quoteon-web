@@ -1,6 +1,6 @@
 import type { ProductSaveBody } from '../adminProduct.ts'
 import { adminProductsPath, type AdminProductDetail, type AdminProductPage, type ProductListQuery } from '../adminProduct.ts'
-import { productDeleteRequest, productStopRequest } from '../productSale.ts'
+import { productDeleteRequest, productResumeRequest, productStopRequest } from '../productSale.ts'
 import { apiRequest } from './client.ts'
 
 export type DetailImageUpload = {
@@ -53,6 +53,11 @@ export function uploadProductDetailImage(productId: number, slot: number, file: 
 
 export function stopAdminProduct(productId: number) {
   const request = productStopRequest(productId)
+  return apiRequest<AdminProductDetail>(request.path, { method: request.method })
+}
+
+export function resumeAdminProduct(productId: number) {
+  const request = productResumeRequest(productId)
   return apiRequest<AdminProductDetail>(request.path, { method: request.method })
 }
 

@@ -6,6 +6,13 @@ export const ADMIN_QUOTE_EMPTY = '검색 결과가 없습니다.'
 export const ADMIN_QUOTE_LIST_FAILED = '견적 목록을 불러오지 못했습니다.'
 export const ADMIN_QUOTE_DETAIL_FAILED = '견적서를 불러오지 못했습니다.'
 export const ADMIN_QUOTE_NOT_FOUND = '견적서를 찾을 수 없습니다.'
+export const ADMIN_QUOTE_DELETE_TITLE = '견적서 삭제'
+export const ADMIN_QUOTE_DELETE_MESSAGE =
+  '견적서를 삭제하면 견적 항목과 이메일 발송 이력도 함께 삭제되며, 삭제 후에는 복구할 수 없습니다. 삭제하시겠습니까?'
+export const ADMIN_QUOTE_DELETE_CANCEL = '취소'
+export const ADMIN_QUOTE_DELETE_CONFIRM = '삭제'
+export const ADMIN_QUOTE_DELETE_FAILED = '견적서를 삭제하지 못했습니다.'
+export const ADMIN_QUOTE_PREVIEW_TITLE = '견적서 미리보기'
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: '작성 중',
@@ -42,6 +49,8 @@ export type AdminQuoteItem = {
   id: number
   productName: string
   productCode: string
+  specification: string | null
+  specificationSource: string | null
   salePrice: number
   quantity: number
   amount: number
@@ -53,6 +62,7 @@ export type AdminQuoteDetail = {
   quoteDate: string
   authorName: string
   status: string
+  memo: string | null
   supplyAmount: number
   vatAmount: number
   totalAmount: number

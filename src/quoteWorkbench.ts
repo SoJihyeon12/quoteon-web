@@ -3,6 +3,7 @@ import type { CustomerSummary } from './customerList.ts'
 export const QUOTE_EDIT_MODE = 'edit'
 export const QUOTE_REWRITE_MODE = 'rewrite'
 export const SENT_QUOTE_EDIT_MESSAGE = '발송 완료된 견적은 수정할 수 없습니다.'
+export const SENT_QUOTE_NEW_QUOTE_NOTICE = '변경이 필요한 경우 새 견적을 작성해 주세요.'
 
 export type WorkbenchLine = {
   productId: number
@@ -16,6 +17,7 @@ export type WorkbenchDraft = {
   writtenOn: string
   customer: CustomerSummary
   lines: WorkbenchLine[]
+  memo: string
 }
 
 export function quoteWorkbenchQuoteId(value: string | null) {
@@ -38,6 +40,10 @@ export function canEditStoredQuote(status: string) {
   return status === 'DRAFT'
 }
 
+export function sentQuoteChangeNotice(status: string) {
+  return status === 'SENT' ? SENT_QUOTE_NEW_QUOTE_NOTICE : ''
+}
+
 export function quoteCustomerLocked(mode: string | null) {
   return mode === QUOTE_EDIT_MODE
 }
@@ -53,6 +59,7 @@ export function workbenchDraftFromQuote(quote: {
   quoteDate: string
   customerId: number
   customerName: string
+  memo?: string | null
   items: Array<{
     productId: number
     productName: string
@@ -95,5 +102,6 @@ export function workbenchDraftFromQuote(quote: {
       customerType: '',
     },
     lines,
+    memo: quote.memo?.trim() ?? '',
   }
 }

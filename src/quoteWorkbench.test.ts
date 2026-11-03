@@ -10,6 +10,7 @@ import {
   quoteEditPath,
   quoteRewritePath,
   quoteSaveAction,
+  sentQuoteChangeNotice,
   workbenchDraftFromQuote,
 } from './quoteWorkbench.ts'
 
@@ -32,6 +33,8 @@ test('작성 중 견적만 수정하고 발송 완료 견적은 수정하지 않
   assert.equal(canEditStoredQuote('DRAFT'), true)
   assert.equal(canEditStoredQuote('SENT'), false)
   assert.equal(SENT_QUOTE_EDIT_MESSAGE, '발송 완료된 견적은 수정할 수 없습니다.')
+  assert.equal(sentQuoteChangeNotice('DRAFT'), '')
+  assert.equal(sentQuoteChangeNotice('SENT'), '변경이 필요한 경우 새 견적을 작성해 주세요.')
 })
 
 test('수정은 기존 견적 번호로 갱신하고 재작성과 신규 작성은 새 견적을 만든다', () => {
@@ -54,6 +57,7 @@ test('수정 중에는 고객을 잠그고 재작성에서는 고객을 바꿀 �
   assert.equal(draft?.customer.name, '김진주')
   assert.equal(draft?.writtenOn, '2026-10-29')
   assert.equal(draft?.lines[0]?.quantity, '1')
+  assert.equal(draft?.memo, '')
 })
 
 test('제품이나 수량을 바꾸면 공급가액과 부가세를 다시 계산한다', () => {
