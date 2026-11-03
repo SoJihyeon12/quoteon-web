@@ -1,8 +1,16 @@
-import { useEffect, useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent, type MouseEvent } from 'react'
 import { fetchCurrentMember } from '../api/auth.ts'
 import { fetchCategories, fetchProducts } from '../api/catalog.ts'
 import LogoutButton from '../components/LogoutButton.tsx'
-import { FAVORITES_EMPTY } from '../favorites.ts'
+import { addFavorite, removeFavorite } from '../api/favorites.ts'
+import {
+  FAVORITE_ADD_FAILED,
+  FAVORITE_REMOVE_FAILED,
+  FAVORITES_EMPTY,
+  favoriteOutcomeMessage,
+  favoriteStar,
+  favoriteToggleLabel,
+} from '../favorites.ts'
 import { fetchCustomer, fetchCustomers } from '../api/customers.ts'
 import { createQuote, fetchQuote, updateQuote } from '../api/quotes.ts'
 import type { ApiResult, Category, Product } from '../api/types.ts'
@@ -25,7 +33,12 @@ import {
 } from '../consultationDraft.ts'
 import { navigate } from '../navigation.ts'
 import { clearQuotePreviewHistory, openQuotePreview, quotePreviewFromHistory } from '../quotePreview.ts'
-import { buildCreateQuoteBody, priceQuote } from '../quoteForm.ts'
+import {
+  PAYMENT_METHOD_OPTIONS,
+  buildCreateQuoteBody,
+  priceQuote,
+  type QuotePaymentMethod,
+} from '../quoteForm.ts'
 import { quoteErrorMessage } from '../quoteList.ts'
 import {
   QUOTE_EDIT_MODE,
@@ -34,6 +47,7 @@ import {
   quoteCustomerLocked,
   quoteSaveAction,
   workbenchDraftFromQuote,
+  workbenchPathAfterPreviewSave,
 } from '../quoteWorkbench.ts'
 import { addedLineQuantity, pageAfterCatalogFilter } from '../productCatalog.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
@@ -104,6 +118,8 @@ export default function ConsultationPage({
   const [productReloadKey, setProductReloadKey] = useState(0)
   const [products, setProducts] = useState<Product[]>([])
   const [productNotice, setProductNotice] = useState('제품 목록을 확인하는 중입니다.')
+  const [favoriteNotice, setFavoriteNotice] = useState('')
+  const [favoritingIds, setFavoritingIds] = useState<Record<number, boolean>>({})
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({})
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
   const [restoredDraft] = useState(() => quotePreviewFromHistory(window.history.state))
@@ -113,6 +129,12 @@ export default function ConsultationPage({
   const [editBlocked, setEditBlocked] = useState(mode === QUOTE_EDIT_MODE && quoteId === null)
   const customerLocked = quoteCustomerLocked(mode)
   const [memo, setMemo] = useState(() => restoredDraft?.memo ?? '')
+  const [paymentMethod, setPaymentMethod] = useState<QuotePaymentMethod | ''>(
+    () =>
+      restoredDraft?.paymentMethod === 'CASH' || restoredDraft?.paymentMethod === 'CARD'
+        ? restoredDraft.paymentMethod
+        : '',
+  )
   const [writtenOn, setWrittenOn] = useState(() => restoredDraft?.writtenOn || todayLabel())
   const [quoteNotice, setQuoteNotice] = useState('')
   const [quoteLines, setQuoteLines] = useState<QuoteLine[]>(() => restoredDraft?.lines ?? [])
@@ -283,6 +305,7 @@ export default function ConsultationPage({
       setQuoteLines(draft.lines)
       setSelectedCustomer(draft.customer)
       setMemo(draft.memo)
+      setPaymentMethod(draft.paymentMethod)
       const customerResult = await fetchCustomer(result.data.customerId)
       if (cancelled) {
         return
@@ -360,6 +383,7 @@ export default function ConsultationPage({
 
   function resetQuote() {
     setMemo('')
+    setPaymentMethod('')
     setWrittenOn(todayLabel())
     setQuoteNotice('')
     setQuoteLines([])
@@ -465,40 +489,57 @@ export default function ConsultationPage({
     })
   }
 
-  async function handleSaveQuote() {
+  async function persistCurrentQuote(): Promise<
+    { ok: true; id: number } | { ok: false; message?: string; redirected?: boolean }
+  > {
     const built = buildCreateQuoteBody({
       customerId: selectedCustomer ? String(selectedCustomer.id) : '',
       quoteDate: writtenOn,
       memo,
+      paymentMethod,
       items: quoteLines.map((line) => ({ productId: line.productId, quantity: line.quantity })),
     })
     if (!built.ok) {
-      setQuoteNotice(built.message)
-      return
+      return { ok: false, message: built.message }
     }
-    setSaving(true)
-    setQuoteNotice('')
     const action = quoteSaveAction(mode, quoteId)
     if (action === 'blocked' || editBlocked || !sourceReady) {
-      setSaving(false)
-      if (editBlocked) {
-        setQuoteNotice(SENT_QUOTE_EDIT_MESSAGE)
-      }
-      return
+      return { ok: false, message: editBlocked ? SENT_QUOTE_EDIT_MESSAGE : undefined }
     }
     const result =
       action === 'update' && quoteId !== null
         ? await updateQuote(quoteId, built.body)
         : await createQuote(built.body)
     if (redirectOnAccessFailure(result)) {
-      return
+      return { ok: false, redirected: true }
     }
     if (!result.ok) {
-      setSaving(false)
-      setQuoteNotice(quoteErrorMessage(result, '견적서를 저장하지 못했습니다.'))
+      return { ok: false, message: quoteErrorMessage(result, '견적서를 저장하지 못했습니다.') }
+    }
+    return { ok: true, id: result.data.id }
+  }
+
+  async function handleSaveQuote() {
+    if (saving) {
       return
     }
-    navigate('/quotes/my')
+    setSaving(true)
+    setQuoteNotice('')
+    try {
+      const persisted = await persistCurrentQuote()
+      if (!persisted.ok) {
+        if (persisted.redirected) {
+          return
+        }
+        if (persisted.message) {
+          setQuoteNotice(persisted.message)
+        }
+        return
+      }
+      navigate('/quotes/my')
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleProductSearch(event: FormEvent<HTMLFormElement>) {
@@ -542,13 +583,86 @@ export default function ConsultationPage({
     })
   }
 
-  function handlePreview() {
-    openQuotePreview({
-      customer: selectedCustomer,
-      writtenOn,
-      memo,
-      lines: quoteLines,
+  function applyFavoriteState(productId: number, favorited: boolean) {
+    setFavoriteNotice('')
+    setProducts((current) => {
+      const next = current.map((product) =>
+        product.id === productId ? { ...product, favorited } : product,
+      )
+      if (favoritesOnly && !favorited) {
+        return next.filter((product) => product.id !== productId)
+      }
+      return next
     })
+  }
+
+  async function toggleProductFavorite(product: Product, event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    event.stopPropagation()
+    if (favoritingIds[product.id]) {
+      return
+    }
+    const wasFavorited = Boolean(product.favorited)
+    setFavoritingIds((current) => ({ ...current, [product.id]: true }))
+    setFavoriteNotice('')
+    applyFavoriteState(product.id, !wasFavorited)
+    try {
+      const result = wasFavorited ? await removeFavorite(product.id) : await addFavorite(product.id)
+      if (redirectOnAccessFailure(result)) {
+        return
+      }
+      if (!result.ok) {
+        applyFavoriteState(product.id, wasFavorited)
+        if (favoritesOnly && wasFavorited) {
+          setProductReloadKey((current) => current + 1)
+        }
+        setFavoriteNotice(
+          favoriteOutcomeMessage(result, wasFavorited ? FAVORITE_REMOVE_FAILED : FAVORITE_ADD_FAILED),
+        )
+        return
+      }
+      applyFavoriteState(product.id, result.data.favorited)
+    } finally {
+      setFavoritingIds((current) => {
+        const next = { ...current }
+        delete next[product.id]
+        return next
+      })
+    }
+  }
+
+  async function handlePreview() {
+    if (saving) {
+      return
+    }
+    setSaving(true)
+    setQuoteNotice('')
+    try {
+      const persisted = await persistCurrentQuote()
+      if (!persisted.ok) {
+        if (persisted.redirected) {
+          return
+        }
+        if (persisted.message) {
+          setQuoteNotice(persisted.message)
+        }
+        return
+      }
+      const returnPath = workbenchPathAfterPreviewSave(persisted.id)
+      openQuotePreview(
+        {
+          customer: selectedCustomer,
+          writtenOn,
+          memo,
+          paymentMethod,
+          quoteId: persisted.id,
+          lines: quoteLines,
+        },
+        returnPath,
+      )
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleCustomerSearch(event: FormEvent<HTMLFormElement>) {
@@ -690,29 +804,48 @@ export default function ConsultationPage({
           <h2 id="product-title" className="visually-hidden">
             제품 목록
           </h2>
+          {favoriteNotice ? (
+            <p className="panel-note" role="status">
+              {favoriteNotice}
+            </p>
+          ) : null}
           {showProducts ? (
             <ul className="product-list">
-              {products.map((product) => (
-                <li key={product.id} className="product-card">
-                  <button type="button" className="product-open" onClick={() => setSelectedProductId(product.id)}>
-                    {product.imagePath && !failedImages[product.id] ? (
-                      <img
-                        src={product.imagePath}
-                        alt=""
-                        onError={() => setFailedImages((current) => ({ ...current, [product.id]: true }))}
-                      />
-                    ) : (
-                      <span className="product-thumb">이미지 없음</span>
-                    )}
-                    <p className="product-name">{product.name}</p>
-                    <p className="product-code">{product.productCode}</p>
-                    <p className="product-price">{formatPrice(product.salePrice)}</p>
-                  </button>
-                  <button type="button" className="product-add" onClick={() => addProduct(product)}>
-                    담기
-                  </button>
-                </li>
-              ))}
+              {products.map((product) => {
+                const favorited = Boolean(product.favorited)
+                const favoriting = Boolean(favoritingIds[product.id])
+                return (
+                  <li key={product.id} className="product-card">
+                    <button
+                      type="button"
+                      className={favorited ? 'product-favorite is-active' : 'product-favorite'}
+                      aria-label={favoriteToggleLabel(favorited)}
+                      aria-pressed={favorited}
+                      disabled={favoriting}
+                      onClick={(event) => void toggleProductFavorite(product, event)}
+                    >
+                      <span aria-hidden="true">{favoriteStar(favorited)}</span>
+                    </button>
+                    <button type="button" className="product-open" onClick={() => setSelectedProductId(product.id)}>
+                      {product.imagePath && !failedImages[product.id] ? (
+                        <img
+                          src={product.imagePath}
+                          alt=""
+                          onError={() => setFailedImages((current) => ({ ...current, [product.id]: true }))}
+                        />
+                      ) : (
+                        <span className="product-thumb">이미지 없음</span>
+                      )}
+                      <p className="product-name">{product.name}</p>
+                      <p className="product-code">{product.productCode}</p>
+                      <p className="product-price">{formatPrice(product.salePrice)}</p>
+                    </button>
+                    <button type="button" className="product-add" onClick={() => addProduct(product)}>
+                      담기
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           ) : (
             <div className="product-empty">
@@ -778,27 +911,45 @@ export default function ConsultationPage({
             <ul className="quote-lines">
               {quoteLines.map((line) => {
                 const amount = amountByProductId.get(line.productId)
+                const quantityValue = Number(line.quantity)
+                const quantityNumber =
+                  Number.isFinite(quantityValue) && quantityValue >= 1 ? Math.floor(quantityValue) : 1
                 return (
                   <li key={line.productId} className="quote-line">
-                    <div className="quote-line-top">
-                      <p>
+                    <div className="quote-line-head">
+                      <div className="quote-line-meta">
                         <strong>{line.name}</strong>
                         <span>{line.productCode}</span>
-                      </p>
-                      <p className="quote-line-price">판매가 {formatPrice(line.salePrice)}</p>
+                      </div>
                       <button
                         type="button"
                         className="quote-line-remove"
+                        aria-label={`${line.name} 삭제`}
                         onClick={() =>
                           setQuoteLines((current) => current.filter((item) => item.productId !== line.productId))
                         }
                       >
-                        삭제
+                        ×
                       </button>
                     </div>
-                    <div className="quote-line-qty">
-                      <label>
-                        수량
+                    <div className="quote-line-controls">
+                      <div className="quote-line-stepper" role="group" aria-label={`${line.name} 수량`}>
+                        <button
+                          type="button"
+                          aria-label={`${line.name} 수량 감소`}
+                          disabled={quantityNumber <= 1}
+                          onClick={() =>
+                            setQuoteLines((current) =>
+                              current.map((item) =>
+                                item.productId === line.productId
+                                  ? { ...item, quantity: String(Math.max(1, quantityNumber - 1)) }
+                                  : item,
+                              ),
+                            )
+                          }
+                        >
+                          −
+                        </button>
                         <input
                           inputMode="numeric"
                           aria-label={`${line.name} 수량`}
@@ -806,13 +957,33 @@ export default function ConsultationPage({
                           onChange={(event) =>
                             setQuoteLines((current) =>
                               current.map((item) =>
-                                item.productId === line.productId ? { ...item, quantity: event.target.value } : item,
+                                item.productId === line.productId
+                                  ? { ...item, quantity: event.target.value }
+                                  : item,
                               ),
                             )
                           }
                         />
-                      </label>
-                      <strong>{amount === undefined ? '-' : formatPrice(amount)}</strong>
+                        <button
+                          type="button"
+                          aria-label={`${line.name} 수량 증가`}
+                          onClick={() =>
+                            setQuoteLines((current) =>
+                              current.map((item) =>
+                                item.productId === line.productId
+                                  ? { ...item, quantity: String(quantityNumber + 1) }
+                                  : item,
+                              ),
+                            )
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className="quote-line-prices">
+                        <span>단가 {formatPrice(line.salePrice)}</span>
+                        <strong>{amount === undefined ? '-' : formatPrice(amount)}</strong>
+                      </div>
                     </div>
                   </li>
                 )
@@ -820,29 +991,52 @@ export default function ConsultationPage({
             </ul>
           )}
 
-          {quoteLines.length > 0 ? (
-            <div className="quote-amounts">
-              <p>
-                <span>공급가액</span>
-                <strong>{formatPrice(priced.supplyAmount)}</strong>
-              </p>
-              <p>
-                <span>부가세 10%</span>
-                <strong>{formatPrice(priced.vatAmount)}</strong>
-              </p>
-            </div>
-          ) : null}
+          <div className="quote-summary">
+            {quoteLines.length > 0 ? (
+              <div className="quote-amounts">
+                <p>
+                  <span>공급가액</span>
+                  <strong>{formatPrice(priced.supplyAmount)}</strong>
+                </p>
+                <p>
+                  <span>부가세 10%</span>
+                  <strong>{formatPrice(priced.vatAmount)}</strong>
+                </p>
+              </div>
+            ) : null}
 
-          <div className="quote-total">
-            <span>합계</span>
-            <strong>{formatPrice(priced.totalAmount)}</strong>
+            <div className="quote-total">
+              <span>합계</span>
+              <strong>{formatPrice(priced.totalAmount)}</strong>
+            </div>
+          </div>
+
+          <div className="payment-method-field" role="group" aria-labelledby="quote-payment-label">
+            <span id="quote-payment-label">결제방법</span>
+            <div className="payment-method-options">
+              {PAYMENT_METHOD_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={
+                    paymentMethod === option.value
+                      ? 'payment-method-option is-active'
+                      : 'payment-method-option'
+                  }
+                  aria-pressed={paymentMethod === option.value}
+                  onClick={() => setPaymentMethod(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <label className="memo-field" htmlFor="quote-memo">
-            메모
+            <span>메모</span>
             <textarea
               id="quote-memo"
-              rows={4}
+              rows={3}
               value={memo}
               onChange={(event) => setMemo(event.target.value)}
             />
@@ -854,24 +1048,40 @@ export default function ConsultationPage({
             </p>
           ) : null}
 
-          <button type="button" className="preview-button" disabled={saving || editBlocked || !sourceReady} onClick={handleSaveQuote}>
-            {saving ? '저장 중입니다.' : '견적서 저장'}
-          </button>
-          <button type="button" className="preview-button preview-button-secondary" onClick={handlePreview}>
-            견적서 미리보기
-          </button>
-          {quoteInProgress ? (
-            <button type="button" className="quote-cancel" onClick={requestCancelQuote}>
-              견적 취소
+          <div className="quote-actions">
+            <button
+              type="button"
+              className="preview-button"
+              disabled={saving || editBlocked || !sourceReady}
+              onClick={handleSaveQuote}
+            >
+              {saving ? '저장 중입니다.' : '견적서 저장'}
             </button>
-          ) : null}
+            <button
+              type="button"
+              className="preview-button preview-button-secondary"
+              disabled={saving || editBlocked || !sourceReady}
+              onClick={() => void handlePreview()}
+            >
+              {saving ? '저장 중입니다.' : '견적서 미리보기'}
+            </button>
+            {quoteInProgress ? (
+              <button type="button" className="quote-cancel" onClick={requestCancelQuote}>
+                견적 취소
+              </button>
+            ) : null}
+          </div>
         </aside>
       </div>
 
       {visibleDialog ? (
         <div className="customer-modal">
           <div
-            className="customer-dialog quote-confirm-dialog"
+            className={
+              visibleDialog === CANCEL_QUOTE_DIALOG
+                ? 'customer-dialog quote-confirm-dialog quote-confirm-dialog-cancel'
+                : 'customer-dialog quote-confirm-dialog'
+            }
             role="dialog"
             aria-modal="true"
             aria-labelledby={confirmTitleId}
@@ -884,7 +1094,17 @@ export default function ConsultationPage({
             <h2 id={confirmTitleId}>
               {visibleDialog === CANCEL_QUOTE_DIALOG ? CANCEL_QUOTE_TITLE : NEW_CONSULTATION_TITLE}
             </h2>
-            <p>{visibleDialog === CANCEL_QUOTE_DIALOG ? CANCEL_QUOTE_MESSAGE : NEW_CONSULTATION_MESSAGE}</p>
+            {visibleDialog === CANCEL_QUOTE_DIALOG ? (
+              <p className="quote-confirm-message">
+                {CANCEL_QUOTE_MESSAGE.split('\n').map((line) => (
+                  <span key={line} className="quote-confirm-message-line">
+                    {line}
+                  </span>
+                ))}
+              </p>
+            ) : (
+              <p>{NEW_CONSULTATION_MESSAGE}</p>
+            )}
             <div className="quote-confirm-actions">
               <button
                 type="button"
@@ -913,10 +1133,10 @@ export default function ConsultationPage({
             aria-modal="true"
             aria-labelledby={popupTitleId}
           >
-            <div className="customer-dialog-head">
-              <p id={popupTitleId}>
-                선택한 고객: <strong>{selectedCustomer?.name || '없음'}</strong>
-              </p>
+            <div className="customer-dialog-head customer-dialog-head-select">
+              <h2 id={popupTitleId} className="visually-hidden">
+                고객 선택
+              </h2>
               <button
                 type="button"
                 className="dialog-close"
@@ -1029,6 +1249,7 @@ export default function ConsultationPage({
         <ProductDetailDialog
           productId={selectedProductId}
           onClose={() => setSelectedProductId(null)}
+          onFavoriteChange={applyFavoriteState}
           onAdd={(product, quantity) =>
             addProduct(
               {

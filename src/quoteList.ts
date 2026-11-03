@@ -79,6 +79,14 @@ export function quoteStatusLabel(status: string) {
   return STATUS_LABEL[status] ?? status
 }
 
+export function canContinueQuote(status: string) {
+  return status === 'DRAFT'
+}
+
+export function canRequote(status: string) {
+  return status === 'SENT'
+}
+
 export function formatAmount(value: number) {
   return `${new Intl.NumberFormat('ko-KR').format(value)}원`
 }

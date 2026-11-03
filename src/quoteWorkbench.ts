@@ -18,6 +18,7 @@ export type WorkbenchDraft = {
   customer: CustomerSummary
   lines: WorkbenchLine[]
   memo: string
+  paymentMethod: 'CASH' | 'CARD' | ''
 }
 
 export function quoteWorkbenchQuoteId(value: string | null) {
@@ -55,11 +56,17 @@ export function quoteSaveAction(mode: string | null, quoteId: number | null) {
   return 'create'
 }
 
+/** 미리보기 자동 저장 뒤에는 항상 수정 경로로 두어 같은 견적을 다시 만들지 않는다. */
+export function workbenchPathAfterPreviewSave(savedQuoteId: number) {
+  return quoteEditPath(savedQuoteId)
+}
+
 export function workbenchDraftFromQuote(quote: {
   quoteDate: string
   customerId: number
   customerName: string
   memo?: string | null
+  paymentMethod?: string | null
   items: Array<{
     productId: number
     productName: string
@@ -103,5 +110,6 @@ export function workbenchDraftFromQuote(quote: {
     },
     lines,
     memo: quote.memo?.trim() ?? '',
+    paymentMethod: quote.paymentMethod === 'CASH' || quote.paymentMethod === 'CARD' ? quote.paymentMethod : '',
   }
 }

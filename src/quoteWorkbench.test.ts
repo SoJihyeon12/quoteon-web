@@ -12,6 +12,7 @@ import {
   quoteSaveAction,
   sentQuoteChangeNotice,
   workbenchDraftFromQuote,
+  workbenchPathAfterPreviewSave,
 } from './quoteWorkbench.ts'
 
 const storedQuote = {
@@ -58,6 +59,16 @@ test('수정 중에는 고객을 잠그고 재작성에서는 고객을 바꿀 �
   assert.equal(draft?.writtenOn, '2026-10-29')
   assert.equal(draft?.lines[0]?.quantity, '1')
   assert.equal(draft?.memo, '')
+  assert.equal(draft?.paymentMethod, '')
+})
+
+test('저장된 결제방법은 작업대 초안에 복원하고 NULL은 빈 값으로 둔다', () => {
+  const withCash = workbenchDraftFromQuote({ ...storedQuote, paymentMethod: 'CASH' })
+  assert.equal(withCash?.paymentMethod, 'CASH')
+  const withCard = workbenchDraftFromQuote({ ...storedQuote, paymentMethod: 'CARD' })
+  assert.equal(withCard?.paymentMethod, 'CARD')
+  const legacyNull = workbenchDraftFromQuote({ ...storedQuote, paymentMethod: null })
+  assert.equal(legacyNull?.paymentMethod, '')
 })
 
 test('제품이나 수량을 바꾸면 공급가액과 부가세를 다시 계산한다', () => {
@@ -88,4 +99,10 @@ test('미리보기에서 돌아오면 수정 또는 재작성 주소를 유지�
   )
   assert.equal(quotePreviewReturnPath({ returnPath: 'https://example.test' }), '/consultation?mode=new')
   assert.equal(quotePreviewReturnPath(null), '/consultation?mode=new')
+})
+
+test('미리보기 자동 저장 뒤에는 저장된 견적 수정 경로로 돌아가 중복 생성을 막는다', () => {
+  assert.equal(workbenchPathAfterPreviewSave(12), '/consultation?mode=edit&quoteId=12')
+  assert.equal(quoteSaveAction('edit', 12), 'update')
+  assert.equal(quoteSaveAction('new', null), 'create')
 })

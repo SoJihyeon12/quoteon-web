@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { logout } from '../api/auth.ts'
+import { clearClientAuthState, logout } from '../api/auth.ts'
 import { LOGOUT_CANCEL, LOGOUT_CONFIRM, LOGOUT_FAILED, LOGOUT_MESSAGE, LOGOUT_TITLE } from '../logoutConfirm.ts'
+import { shouldCompleteClientLogout } from '../logoutDecision.ts'
 import { navigate } from '../navigation.ts'
+import { clearQuotePreviewHistory } from '../quotePreview.ts'
 import './LogoutButton.css'
 
 export default function LogoutButton({ className }: { className: string }) {
@@ -24,6 +26,12 @@ export default function LogoutButton({ className }: { className: string }) {
     setOpen(false)
   }
 
+  function finishLogout() {
+    clearClientAuthState()
+    clearQuotePreviewHistory()
+    navigate('/login')
+  }
+
   async function confirmLogout() {
     if (submitting) {
       return
@@ -31,12 +39,12 @@ export default function LogoutButton({ className }: { className: string }) {
     setSubmitting(true)
     setMessage('')
     const result = await logout()
-    if (result.ok || result.status === 401) {
-      navigate('/login')
+    if (shouldCompleteClientLogout(result)) {
+      finishLogout()
       return
     }
     setSubmitting(false)
-    setMessage(result.error?.message || LOGOUT_FAILED)
+    setMessage(result.ok ? LOGOUT_FAILED : result.error?.message || LOGOUT_FAILED)
   }
 
   return (

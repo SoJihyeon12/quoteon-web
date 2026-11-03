@@ -135,26 +135,43 @@ function QuoteList() {
       ) : null}
       {listState === 'ready' ? (
         <div className="admin-table-wrap">
-          <table className="admin-table">
+          <table className="admin-table admin-table-quotes">
             <thead>
               <tr>
-                <th scope="col">작성일</th>
-                <th scope="col">작성자</th>
-                <th scope="col">고객명</th>
-                <th scope="col">금액</th>
-                <th scope="col">상태</th>
-                <th scope="col">상세</th>
+                <th scope="col" className="admin-quote-col-date">
+                  작성일
+                </th>
+                <th scope="col" className="admin-quote-col-author">
+                  작성자
+                </th>
+                <th scope="col" className="admin-quote-col-customer">
+                  고객명
+                </th>
+                <th scope="col" className="admin-quote-col-amount admin-quote-amount">
+                  금액
+                </th>
+                <th scope="col" className="admin-quote-col-status">
+                  상태
+                </th>
+                <th scope="col" className="admin-quote-col-action">
+                  상세
+                </th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.quoteDate}</td>
-                  <td>{item.authorName}</td>
-                  <td>{item.customerName}</td>
-                  <td>{formatAdminQuoteAmount(item.totalAmount)}</td>
-                  <td>{adminQuoteStatusLabel(item.status)}</td>
-                  <td>
+                  <td className="admin-quote-col-date">{item.quoteDate}</td>
+                  <td className="admin-quote-col-author">{item.authorName}</td>
+                  <td className="admin-quote-col-customer">{item.customerName}</td>
+                  <td className="admin-quote-col-amount admin-quote-amount">
+                    {formatAdminQuoteAmount(item.totalAmount)}
+                  </td>
+                  <td className="admin-quote-col-status">
+                    {adminQuoteStatusLabel(item.status)}
+                    {item.isPrivate ? <span className="admin-quote-list-private"> · 비공개</span> : null}
+                  </td>
+                  <td className="admin-quote-col-action">
                     <a
                       className="admin-edit-link"
                       href={adminQuoteDetailPath(item.id)}

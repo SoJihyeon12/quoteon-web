@@ -12,7 +12,17 @@ export const ADMIN_QUOTE_DELETE_MESSAGE =
 export const ADMIN_QUOTE_DELETE_CANCEL = '취소'
 export const ADMIN_QUOTE_DELETE_CONFIRM = '삭제'
 export const ADMIN_QUOTE_DELETE_FAILED = '견적서를 삭제하지 못했습니다.'
-export const ADMIN_QUOTE_PREVIEW_TITLE = '견적서 미리보기'
+export const ADMIN_QUOTE_PRIVATE_TITLE = '견적서 비공개'
+export const ADMIN_QUOTE_PRIVATE_MESSAGE =
+  '비공개로 설정하면 영업 회원의 내 견적 목록·상세·다운로드·이메일 기능에서 이 견적이 제외됩니다. 비공개로 설정하시겠습니까?'
+export const ADMIN_QUOTE_PUBLIC_TITLE = '견적서 공개'
+export const ADMIN_QUOTE_PUBLIC_MESSAGE = '공개로 되돌리면 작성한 영업 회원이 다시 조회하고 다운로드할 수 있습니다. 공개하시겠습니까?'
+export const ADMIN_QUOTE_PRIVATE_CONFIRM = '비공개'
+export const ADMIN_QUOTE_PUBLIC_CONFIRM = '공개'
+export const ADMIN_QUOTE_PRIVACY_CANCEL = '취소'
+export const ADMIN_QUOTE_PRIVACY_FAILED = '공개 상태를 변경하지 못했습니다.'
+export const ADMIN_QUOTE_PRIVATE_DONE = '견적서를 비공개로 설정했습니다.'
+export const ADMIN_QUOTE_PUBLIC_DONE = '견적서를 공개로 변경했습니다.'
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: '작성 중',
@@ -26,6 +36,7 @@ export type AdminQuoteSummary = {
   customerName: string
   totalAmount: number
   status: string
+  isPrivate: boolean
 }
 
 export type AdminQuotePage = {
@@ -66,6 +77,7 @@ export type AdminQuoteDetail = {
   supplyAmount: number
   vatAmount: number
   totalAmount: number
+  isPrivate: boolean
   customer: AdminQuoteCustomer
   items: AdminQuoteItem[]
 }

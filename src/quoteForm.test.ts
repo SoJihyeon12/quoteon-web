@@ -24,10 +24,11 @@ test('제품 금액은 소수 둘째 자리, 부가세는 원 단위 반올림�
   assert.equal(combined.totalAmount, 264017)
 })
 
-test('견적 생성 본문은 customerId, quoteDate, productId, quantity만 담는다', () => {
+test('견적 생성 본문은 customerId, quoteDate, paymentMethod, productId, quantity를 담는다', () => {
   const result = buildCreateQuoteBody({
     customerId: '12',
     quoteDate: '2026-10-29',
+    paymentMethod: 'CASH',
     items: [
       { productId: 3, quantity: '2' },
       { productId: 8, quantity: '1' },
@@ -38,6 +39,7 @@ test('견적 생성 본문은 customerId, quoteDate, productId, quantity만 담�
     assert.deepEqual(result.body, {
       customerId: 12,
       quoteDate: '2026-10-29',
+      paymentMethod: 'CASH',
       items: [
         { productId: 3, quantity: 2 },
         { productId: 8, quantity: 1 },
@@ -50,6 +52,7 @@ test('빈 메모는 견적 본문에서 빼고 입력한 메모는 담는다', (
   const withoutMemo = buildCreateQuoteBody({
     customerId: '12',
     quoteDate: '2026-10-29',
+    paymentMethod: 'CASH',
     memo: '   ',
     items: [{ productId: 3, quantity: '1' }],
   })
@@ -60,6 +63,7 @@ test('빈 메모는 견적 본문에서 빼고 입력한 메모는 담는다', (
   const withMemo = buildCreateQuoteBody({
     customerId: '12',
     quoteDate: '2026-10-29',
+    paymentMethod: 'CASH',
     memo: ' 납기 확인 ',
     items: [{ productId: 3, quantity: '1' }],
   })
@@ -74,25 +78,49 @@ test('빈 메모는 견적 본문에서 빼고 입력한 메모는 담는다', (
 
 test('고객, 견적일, 수량, 중복 제품은 저장 전에 거른다', () => {
   assert.equal(
-    buildCreateQuoteBody({ customerId: '', quoteDate: '2026-10-29', items: [{ productId: 1, quantity: '1' }] }).ok,
+    buildCreateQuoteBody({
+      customerId: '',
+      quoteDate: '2026-10-29',
+      paymentMethod: 'CASH',
+      items: [{ productId: 1, quantity: '1' }],
+    }).ok,
     false,
   )
   assert.equal(
-    buildCreateQuoteBody({ customerId: '1', quoteDate: '', items: [{ productId: 1, quantity: '1' }] }).ok,
+    buildCreateQuoteBody({
+      customerId: '1',
+      quoteDate: '',
+      paymentMethod: 'CASH',
+      items: [{ productId: 1, quantity: '1' }],
+    }).ok,
     false,
   )
   assert.equal(
-    buildCreateQuoteBody({ customerId: '1', quoteDate: '2026-02-31', items: [{ productId: 1, quantity: '1' }] }).ok,
+    buildCreateQuoteBody({
+      customerId: '1',
+      quoteDate: '2026-02-31',
+      paymentMethod: 'CASH',
+      items: [{ productId: 1, quantity: '1' }],
+    }).ok,
     false,
   )
-  assert.equal(buildCreateQuoteBody({ customerId: '1', quoteDate: '2026-10-29', items: [] }).ok, false)
   assert.equal(
-    buildCreateQuoteBody({ customerId: '1', quoteDate: '2026-10-29', items: [{ productId: 1, quantity: '0' }] }).ok,
+    buildCreateQuoteBody({ customerId: '1', quoteDate: '2026-10-29', paymentMethod: 'CASH', items: [] }).ok,
+    false,
+  )
+  assert.equal(
+    buildCreateQuoteBody({
+      customerId: '1',
+      quoteDate: '2026-10-29',
+      paymentMethod: 'CASH',
+      items: [{ productId: 1, quantity: '0' }],
+    }).ok,
     false,
   )
   const duplicate = buildCreateQuoteBody({
     customerId: '1',
     quoteDate: '2026-10-29',
+    paymentMethod: 'CASH',
     items: [
       { productId: 4, quantity: '1' },
       { productId: 4, quantity: '2' },
@@ -101,5 +129,42 @@ test('고객, 견적일, 수량, 중복 제품은 저장 전에 거른다', () =
   assert.equal(duplicate.ok, false)
   if (!duplicate.ok) {
     assert.equal(duplicate.message, '같은 제품을 항목에 중복해서 넣을 수 없습니다.')
+  }
+})
+
+test('결제방법이 없거나 허용 값이 아니면 저장하지 않는다', () => {
+  assert.equal(
+    buildCreateQuoteBody({ customerId: '1', quoteDate: '2026-10-29', items: [{ productId: 1, quantity: '1' }] })
+      .ok,
+    false,
+  )
+  assert.equal(
+    buildCreateQuoteBody({
+      customerId: '1',
+      quoteDate: '2026-10-29',
+      paymentMethod: 'TRANSFER',
+      items: [{ productId: 1, quantity: '1' }],
+    }).ok,
+    false,
+  )
+  const cash = buildCreateQuoteBody({
+    customerId: '1',
+    quoteDate: '2026-10-29',
+    paymentMethod: 'CASH',
+    items: [{ productId: 1, quantity: '1' }],
+  })
+  assert.equal(cash.ok, true)
+  if (cash.ok) {
+    assert.equal(cash.body.paymentMethod, 'CASH')
+  }
+  const card = buildCreateQuoteBody({
+    customerId: '1',
+    quoteDate: '2026-10-29',
+    paymentMethod: 'CARD',
+    items: [{ productId: 1, quantity: '1' }],
+  })
+  assert.equal(card.ok, true)
+  if (card.ok) {
+    assert.equal(card.body.paymentMethod, 'CARD')
   }
 })

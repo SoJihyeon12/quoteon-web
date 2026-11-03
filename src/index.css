@@ -1,31 +1,16 @@
 :root {
   font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
-  color: #1b2838;
-  background: #fff;
+  color: var(--qo-color-text);
+  background: var(--qo-color-surface);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100svh;
-  background: #fff;
-}
-
-#root {
-  min-height: 100svh;
-}
-
-button,
-input,
-a {
-  font: inherit;
 }

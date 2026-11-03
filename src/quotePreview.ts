@@ -3,6 +3,8 @@ import { priceQuote } from './quoteForm.ts'
 
 export const QUOTE_PREVIEW_PATH = '/quotes/preview'
 export const QUOTE_WORKBENCH_PATH = '/consultation?mode=new'
+export const PREVIEW_DOCUMENT_REQUIRES_SAVED_QUOTE =
+  '견적을 저장한 뒤 PDF·JPEG·PNG 저장과 이메일 전송을 사용할 수 있습니다.'
 
 export type QuotePreviewLine = {
   productId: number
@@ -16,7 +18,16 @@ export type QuotePreviewDraft = {
   customer: CustomerSummary | null
   writtenOn: string
   memo: string
+  paymentMethod?: 'CASH' | 'CARD' | ''
+  quoteId?: number | null
   lines: QuotePreviewLine[]
+}
+
+export function previewSavedQuoteId(draft: QuotePreviewDraft | null | undefined) {
+  if (!draft || draft.quoteId == null) {
+    return null
+  }
+  return Number.isSafeInteger(draft.quoteId) && draft.quoteId > 0 ? draft.quoteId : null
 }
 
 export type QuotePreviewRow = {
@@ -76,11 +87,14 @@ export function quotePreviewReturnPath(state: unknown) {
   return returnPath
 }
 
-export function openQuotePreview(draft: QuotePreviewDraft) {
+export function openQuotePreview(draft: QuotePreviewDraft, returnPath?: string) {
   const page = globalThis.window
-  const returnPath = `${page.location.pathname}${page.location.search}`
-  const state = previewHistoryState(draft, returnPath)
-  page.history.replaceState(state, '', page.location.href)
+  const resolvedReturnPath =
+    typeof returnPath === 'string' && returnPath.startsWith('/consultation')
+      ? returnPath
+      : `${page.location.pathname}${page.location.search}`
+  const state = previewHistoryState(draft, resolvedReturnPath)
+  page.history.replaceState(state, '', resolvedReturnPath)
   page.history.pushState(state, '', QUOTE_PREVIEW_PATH)
   page.dispatchEvent(new Event('popstate'))
 }
@@ -128,10 +142,20 @@ export function readQuotePreview(raw: string | null): QuotePreviewDraft | null {
     if (!parsed.lines.every(isLine)) {
       return null
     }
+    const paymentMethod =
+      parsed.paymentMethod === 'CASH' || parsed.paymentMethod === 'CARD' || parsed.paymentMethod === ''
+        ? parsed.paymentMethod
+        : ''
+    const quoteId =
+      typeof parsed.quoteId === 'number' && Number.isSafeInteger(parsed.quoteId) && parsed.quoteId > 0
+        ? parsed.quoteId
+        : null
     return {
       customer: parsed.customer ?? null,
       writtenOn: parsed.writtenOn,
       memo: parsed.memo,
+      paymentMethod,
+      quoteId,
       lines: parsed.lines,
     }
   } catch {

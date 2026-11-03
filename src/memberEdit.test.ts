@@ -5,6 +5,7 @@ import { memberEditPath, memberIdFromEditPath } from './adminMenu.ts'
 import { deactivateMember } from './api/adminMembers.ts'
 import { memberStatusLabel } from './adminMemberList.ts'
 import {
+  buildDeactivateMemberBody,
   buildMemberUpdateBody,
   canActivateMember,
   canConfirmMemberActivate,
@@ -14,6 +15,9 @@ import {
   MEMBER_COMPANY_TOO_LONG,
   MEMBER_DEACTIVATE_MESSAGE,
   MEMBER_DEACTIVATE_NOTE,
+  MEMBER_DEACTIVATE_OTHER_REQUIRED,
+  MEMBER_DEACTIVATE_REASON_REQUIRED,
+  MEMBER_DEACTIVATION_REASONS,
   MEMBER_EMAIL_INVALID,
   MEMBER_EMAIL_REQUIRED,
   MEMBER_NAME_REQUIRED,
@@ -22,6 +26,7 @@ import {
   MEMBER_ROLE_INVALID,
   memberDeactivateOutcome,
   memberEditSaveResult,
+  validateMemberDeactivation,
   validateMemberEdit,
   type MemberEditValues,
 } from './memberEdit.ts'
@@ -121,6 +126,24 @@ test('활성 회원만 비활성화 확인 후 목록으로 이동하고 그 외
   assert.match(MEMBER_DEACTIVATE_MESSAGE, /로그인/)
   assert.match(MEMBER_DEACTIVATE_MESSAGE, /신규 견적/)
   assert.match(MEMBER_DEACTIVATE_MESSAGE, /유지/)
+  assert.match(MEMBER_DEACTIVATE_MESSAGE, /사유/)
+  assert.deepEqual(
+    MEMBER_DEACTIVATION_REASONS.map((reason) => reason.label),
+    ['퇴사 처리', '휴직', '계약 종료', '계정 사용 중단', '기타'],
+  )
+  assert.equal(validateMemberDeactivation({ reasonCode: '', reasonDetail: '' }), MEMBER_DEACTIVATE_REASON_REQUIRED)
+  assert.equal(
+    validateMemberDeactivation({ reasonCode: 'OTHER', reasonDetail: '  ' }),
+    MEMBER_DEACTIVATE_OTHER_REQUIRED,
+  )
+  assert.deepEqual(buildDeactivateMemberBody({ reasonCode: 'RESIGNED', reasonDetail: '무시' }), {
+    reasonCode: 'RESIGNED',
+    reasonDetail: null,
+  })
+  assert.deepEqual(buildDeactivateMemberBody({ reasonCode: 'OTHER', reasonDetail: ' 장기 미사용 ' }), {
+    reasonCode: 'OTHER',
+    reasonDetail: '장기 미사용',
+  })
   assert.equal(canDeactivateMember('ACTIVE'), true)
   assert.equal(canDeactivateMember('PENDING'), false)
   assert.equal(canDeactivateMember('REJECTED'), false)
@@ -129,10 +152,13 @@ test('활성 회원만 비활성화 확인 후 목록으로 이동하고 그 외
   assert.equal(canActivateMember('ACTIVE'), false)
   assert.equal(canConfirmMemberActivate(true, false, 'INACTIVE'), true)
   assert.equal(canConfirmMemberActivate(true, false, 'ACTIVE'), false)
-  assert.equal(canConfirmMemberDeactivate(false, false, 'ACTIVE'), false)
-  assert.equal(canConfirmMemberDeactivate(true, false, 'ACTIVE'), true)
-  assert.equal(canConfirmMemberDeactivate(true, true, 'ACTIVE'), false)
-  assert.equal(canConfirmMemberDeactivate(true, false, 'INACTIVE'), false)
+  assert.equal(canConfirmMemberDeactivate(false, false, 'ACTIVE', 'RESIGNED'), false)
+  assert.equal(canConfirmMemberDeactivate(true, false, 'ACTIVE', 'RESIGNED'), true)
+  assert.equal(canConfirmMemberDeactivate(true, false, 'ACTIVE', ''), false)
+  assert.equal(canConfirmMemberDeactivate(true, false, 'ACTIVE', 'OTHER', ''), false)
+  assert.equal(canConfirmMemberDeactivate(true, false, 'ACTIVE', 'OTHER', '사유'), true)
+  assert.equal(canConfirmMemberDeactivate(true, true, 'ACTIVE', 'RESIGNED'), false)
+  assert.equal(canConfirmMemberDeactivate(true, false, 'INACTIVE', 'RESIGNED'), false)
   assert.equal(memberStatusLabel('INACTIVE'), '비활성화')
   assert.deepEqual(
     memberDeactivateOutcome({
@@ -146,6 +172,7 @@ test('활성 회원만 비활성화 확인 후 목록으로 이동하고 그 외
         companyName: null,
         role: 'ROLE_USER',
         status: 'INACTIVE',
+        deactivationReason: '퇴사 처리',
       },
     }),
     { path: '/admin/members', message: '' },

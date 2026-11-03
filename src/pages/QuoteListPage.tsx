@@ -3,6 +3,8 @@ import { fetchCurrentMember } from '../api/auth.ts'
 import LogoutButton from '../components/LogoutButton.tsx'
 import { fetchQuotes } from '../api/quotes.ts'
 import {
+  canContinueQuote,
+  canRequote,
   formatAmount,
   pageAfterQuoteSearch,
   quoteErrorMessage,
@@ -12,6 +14,7 @@ import {
   type QuoteSummary,
 } from '../quoteList.ts'
 import { navigate } from '../navigation.ts'
+import { quoteEditPath, quoteRewritePath } from '../quoteWorkbench.ts'
 import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
 import './ConsultationPage.css'
 import './QuoteListPage.css'
@@ -206,9 +209,8 @@ export default function QuoteListPage() {
                   <th scope="col" className="quote-amount">
                     합계 금액
                   </th>
-                  <th scope="col">
-                    <span className="visually-hidden">견적서 확인</span>
-                  </th>
+                  <th scope="col">견적서</th>
+                  <th scope="col">작업</th>
                 </tr>
               </thead>
               <tbody>
@@ -232,6 +234,36 @@ export default function QuoteListPage() {
                       >
                         견적서 확인
                       </button>
+                    </td>
+                    <td>
+                      <div className="quote-actions">
+                        {canContinueQuote(item.status) ? (
+                          <a
+                            className="quote-action-button quote-action-continue"
+                            href={quoteEditPath(item.id)}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              event.preventDefault()
+                              navigate(quoteEditPath(item.id))
+                            }}
+                          >
+                            이어서 작성
+                          </a>
+                        ) : null}
+                        {canRequote(item.status) ? (
+                          <a
+                            className="quote-action-button quote-action-requote"
+                            href={quoteRewritePath(item.id)}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              event.preventDefault()
+                              navigate(quoteRewritePath(item.id))
+                            }}
+                          >
+                            재견적
+                          </a>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))}

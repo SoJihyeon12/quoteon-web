@@ -103,11 +103,63 @@ export function canSubmitMemberEdit(saving: boolean) {
 export const MEMBER_DEACTIVATE_TITLE = '사용자 비활성화'
 export const MEMBER_DEACTIVATE_NOTE = '비활성화 시 로그인할 수 없습니다.'
 export const MEMBER_DEACTIVATE_MESSAGE =
-  '비활성화하면 로그인과 신규 견적 작성이 제한됩니다. 기존 고객과 견적 데이터는 유지됩니다.'
+  '비활성화하면 로그인과 신규 견적 작성이 제한됩니다. 기존 고객과 견적 데이터는 유지됩니다. 비활성화 사유를 선택해 주세요.'
 export const MEMBER_DEACTIVATE_CANCEL = '취소'
 export const MEMBER_DEACTIVATE_CONFIRM = '비활성화'
+export const MEMBER_DEACTIVATE_FINAL_CONFIRM =
+  '선택한 사유로 사용자를 비활성화할까요? 비활성화하면 로그인할 수 없습니다.'
 export const MEMBER_DEACTIVATE_BLOCKED = '활성 회원만 비활성화할 수 있습니다.'
 export const MEMBER_DEACTIVATE_FAILED = '회원을 비활성화하지 못했습니다.'
+export const MEMBER_DEACTIVATE_REASON_REQUIRED = '비활성화 사유를 선택해 주세요.'
+export const MEMBER_DEACTIVATE_REASON_INVALID = '지원하지 않는 비활성화 사유입니다.'
+export const MEMBER_DEACTIVATE_OTHER_REQUIRED = '기타 사유를 입력해 주세요.'
+export const MEMBER_DEACTIVATE_OTHER_TOO_LONG = '기타 사유는 200자 이하로 입력해 주세요.'
+
+export const MEMBER_DEACTIVATION_REASONS = [
+  { code: 'RESIGNED', label: '퇴사 처리' },
+  { code: 'LEAVE', label: '휴직' },
+  { code: 'CONTRACT_ENDED', label: '계약 종료' },
+  { code: 'ACCOUNT_SUSPENDED', label: '계정 사용 중단' },
+  { code: 'OTHER', label: '기타' },
+] as const
+
+export type MemberDeactivationReasonCode = (typeof MEMBER_DEACTIVATION_REASONS)[number]['code']
+
+export type MemberDeactivationValues = {
+  reasonCode: string
+  reasonDetail: string
+}
+
+export function validateMemberDeactivation(values: MemberDeactivationValues): string | null {
+  const reasonCode = values.reasonCode.trim()
+  if (!reasonCode) {
+    return MEMBER_DEACTIVATE_REASON_REQUIRED
+  }
+  if (!MEMBER_DEACTIVATION_REASONS.some((reason) => reason.code === reasonCode)) {
+    return MEMBER_DEACTIVATE_REASON_INVALID
+  }
+  if (reasonCode === 'OTHER') {
+    const detail = values.reasonDetail.trim()
+    if (!detail) {
+      return MEMBER_DEACTIVATE_OTHER_REQUIRED
+    }
+    if (detail.length > 200) {
+      return MEMBER_DEACTIVATE_OTHER_TOO_LONG
+    }
+  }
+  return null
+}
+
+export function buildDeactivateMemberBody(values: MemberDeactivationValues) {
+  if (validateMemberDeactivation(values) !== null) {
+    return null
+  }
+  const reasonCode = values.reasonCode.trim()
+  return {
+    reasonCode,
+    reasonDetail: reasonCode === 'OTHER' ? values.reasonDetail.trim() : null,
+  }
+}
 
 export const MEMBER_ACTIVATE_TITLE = '사용자 활성화'
 export const MEMBER_ACTIVATE_NOTE = '활성화하면 다시 로그인할 수 있습니다.'
@@ -126,8 +178,19 @@ export function canActivateMember(status: string) {
   return status === 'INACTIVE'
 }
 
-export function canConfirmMemberDeactivate(confirmOpen: boolean, submitting: boolean, status: string) {
-  return confirmOpen && !submitting && canDeactivateMember(status)
+export function canConfirmMemberDeactivate(
+  confirmOpen: boolean,
+  submitting: boolean,
+  status: string,
+  reasonCode = '',
+  reasonDetail = '',
+) {
+  return (
+    confirmOpen &&
+    !submitting &&
+    canDeactivateMember(status) &&
+    validateMemberDeactivation({ reasonCode, reasonDetail }) === null
+  )
 }
 
 export function canConfirmMemberActivate(confirmOpen: boolean, submitting: boolean, status: string) {

@@ -1,0 +1,206 @@
+.admin-quote-detail .admin-edit-head {
+  margin-bottom: 4px;
+}
+
+.admin-quote-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
+  gap: var(--qo-space-4);
+  align-items: start;
+  margin-top: var(--qo-space-4);
+}
+
+.admin-quote-document {
+  min-width: 0;
+  padding: 22px 20px 18px;
+  border: 1px solid var(--qo-color-border);
+  border-radius: var(--qo-radius-lg);
+  background: var(--qo-color-surface);
+  box-shadow: var(--qo-shadow-sheet);
+}
+
+.admin-quote-side {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: var(--qo-space-4);
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--qo-color-border);
+  border-radius: var(--qo-radius-lg);
+  background: var(--qo-color-surface-muted);
+}
+
+.admin-quote-side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--qo-space-2);
+}
+
+.admin-quote-side-head h3 {
+  margin: 0;
+  color: var(--qo-color-text);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.admin-quote-side-meta {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.admin-quote-side-meta div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+}
+
+.admin-quote-side-meta dt {
+  color: var(--qo-color-muted);
+  font-size: var(--qo-font-size-sm);
+  font-weight: 700;
+}
+
+.admin-quote-side-meta dd {
+  margin: 0;
+  color: var(--qo-color-text);
+  font-size: var(--qo-font-size-body);
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-quote-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--qo-radius-sm);
+  font-size: var(--qo-font-size-sm);
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-quote-status-draft {
+  border: 1px solid #c9d5e4;
+  background: var(--qo-color-surface-panel);
+  color: #3d526b;
+}
+
+.admin-quote-status-sent {
+  border: 1px solid #bfd6fb;
+  background: #eaf3ff;
+  color: var(--qo-color-primary);
+}
+
+.admin-quote-status-other {
+  border: 1px solid #ddd2bf;
+  background: #f4f1ea;
+  color: #6b5b45;
+}
+
+.admin-quote-side-memo h4 {
+  margin: 0 0 6px;
+  color: var(--qo-color-muted);
+  font-size: var(--qo-font-size-sm);
+  font-weight: 700;
+}
+
+.admin-quote-side-memo p {
+  margin: 0;
+  color: var(--qo-color-text);
+  font-size: var(--qo-font-size-body);
+  font-weight: 650;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.admin-quote-side-actions {
+  display: grid;
+  gap: var(--qo-space-2);
+}
+
+.admin-quote-side-actions button {
+  width: 100%;
+  height: var(--qo-btn-height);
+  padding: 0 12px;
+  border-radius: var(--qo-radius-md);
+  font: inherit;
+  font-size: var(--qo-font-size-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-quote-action-primary {
+  border: 0;
+  background: var(--qo-color-primary);
+  color: #fff;
+}
+
+.admin-quote-action-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.admin-quote-action-danger {
+  border: 1px solid var(--qo-color-danger);
+  background: var(--qo-color-surface);
+  color: var(--qo-color-danger);
+}
+
+.admin-quote-action-privacy {
+  border: 1px solid var(--qo-color-primary);
+  background: var(--qo-color-surface);
+  color: var(--qo-color-primary);
+}
+
+.admin-quote-privacy {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--qo-radius-sm);
+  font-size: var(--qo-font-size-sm);
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-quote-privacy-public {
+  border: 1px solid #c9d5e4;
+  background: var(--qo-color-surface-panel);
+  color: #3d526b;
+}
+
+.admin-quote-privacy-private {
+  border: 1px solid #f0c2b8;
+  background: #fff4f1;
+  color: var(--qo-color-danger-text);
+}
+
+.admin-quote-detail .admin-quote-notice,
+.admin-quote-detail .admin-message {
+  margin: 0;
+}
+
+@media (max-width: 960px) {
+  .admin-quote-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-quote-side {
+    position: static;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-quote-document {
+    padding: 16px 12px 14px;
+  }
+}

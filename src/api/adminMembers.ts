@@ -22,8 +22,16 @@ export function updateMember(memberId: number, body: MemberUpdateBody) {
   })
 }
 
-export function deactivateMember(memberId: number) {
-  return apiRequest<MemberSummary>(`/api/admin/members/${memberId}/deactivate`, { method: 'POST' })
+export type DeactivateMemberBody = {
+  reasonCode: string
+  reasonDetail: string | null
+}
+
+export function deactivateMember(memberId: number, body: DeactivateMemberBody) {
+  return apiRequest<MemberSummary>(`/api/admin/members/${memberId}/deactivate`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
 }
 
 export function activateMember(memberId: number) {

@@ -4,6 +4,7 @@ import { productsPath } from './productCatalog.ts'
 import {
   FAVORITES_EMPTY,
   favoriteOutcomeMessage,
+  favoriteStar,
   favoriteToggleLabel,
 } from './favorites.ts'
 
@@ -18,6 +19,8 @@ test('즐겨찾기 필터는 favoriteOnly 쿼리를 사용한다', () => {
 test('즐겨찾기 토글 문구와 오류 메시지를 구분한다', () => {
   assert.equal(favoriteToggleLabel(false), '즐겨찾기')
   assert.equal(favoriteToggleLabel(true), '즐겨찾기 해제')
+  assert.equal(favoriteStar(false), '☆')
+  assert.equal(favoriteStar(true), '★')
   assert.equal(
     favoriteOutcomeMessage(
       {

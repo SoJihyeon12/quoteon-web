@@ -19,6 +19,13 @@ export function deleteAdminQuote(quoteId: number) {
   return apiRequest<void>(`/api/admin/quotes/${quoteId}`, { method: 'DELETE' })
 }
 
+export function updateAdminQuotePrivacy(quoteId: number, isPrivate: boolean) {
+  return apiRequest<AdminQuoteDetail>(`/api/admin/quotes/${quoteId}/privacy`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isPrivate }),
+  })
+}
+
 export function downloadAdminQuote(quoteId: number, kind: QuoteDownloadKind) {
   return apiDownload(adminQuoteDownloadPath(quoteId, kind))
 }

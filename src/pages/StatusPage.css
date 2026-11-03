@@ -12,14 +12,14 @@
 }
 
 .status-details dt {
-  color: #5d6d80;
+  color: var(--qo-color-muted);
   font-size: 14px;
   font-weight: 650;
 }
 
 .status-details dd {
   margin: 0;
-  color: #12263f;
+  color: var(--qo-color-text);
   font-size: 14px;
   font-weight: 700;
   text-align: right;
@@ -27,7 +27,7 @@
 
 .status-note {
   margin: 28px 0 0;
-  color: #5d6d80;
+  color: var(--qo-color-muted);
   font-size: 14px;
   line-height: 1.6;
   text-align: center;

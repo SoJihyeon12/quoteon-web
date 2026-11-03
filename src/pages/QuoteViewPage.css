@@ -1,78 +1,138 @@
-.quote-view-meta,
-.quote-view-summary {
+.quote-view-panel {
+  max-width: 960px;
+}
+
+.quote-view-body {
   display: grid;
-  gap: 10px;
-  margin: 20px 0 0;
-}
-
-.quote-view-meta {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.quote-view-meta div,
-.quote-view-summary div {
-  display: flex;
-  justify-content: space-between;
   gap: 16px;
-  margin: 0;
+  margin-top: 16px;
 }
 
-.quote-view-meta dt,
-.quote-view-summary dt {
-  color: #5d6d80;
+.quote-view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quote-sent-notice {
+  margin: 12px 0 0;
+  color: var(--qo-color-muted);
   font-size: 14px;
-}
-
-.quote-view-meta dd,
-.quote-view-summary dd {
-  margin: 0;
-  color: #12263f;
-  font-size: 14px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.quote-view-summary {
-  justify-items: end;
-}
-
-.quote-view-summary div {
-  width: min(100%, 280px);
-}
-
-@media (max-width: 720px) {
-  .quote-view-meta {
-    grid-template-columns: 1fr;
-  }
 }
 
 .quote-downloads {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 16px;
 }
 
 .quote-downloads button {
-  height: 32px;
+  height: 36px;
   padding: 0 12px;
-  border: 1px solid #12263f;
+  border: 1px solid var(--qo-color-text);
   border-radius: 6px;
-  background: #fff;
-  color: #12263f;
+  background: var(--qo-color-surface);
+  color: var(--qo-color-text);
   font-size: 13px;
   font-weight: 700;
 }
 
 .quote-downloads button:disabled {
-  color: #8b9aab;
+  color: var(--qo-color-faint);
   border-color: #d5deea;
 }
 
 .quote-download-message {
-  margin: 12px 0 0;
-  color: #b42318;
+  margin: 0;
+  color: var(--qo-color-danger-text);
   font-size: 14px;
+}
+
+.quote-view-manage {
+  padding: 14px 16px;
+  border: 1px solid var(--qo-color-border);
+  border-radius: 10px;
+  background: var(--qo-color-surface-muted);
+}
+
+.quote-view-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 0;
+}
+
+.quote-view-meta div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+}
+
+.quote-view-meta dt {
+  color: var(--qo-color-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.quote-view-meta dd {
+  margin: 0;
+  color: var(--qo-color-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.quote-view-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.quote-view-status-draft {
+  background: var(--qo-color-surface-panel);
+  color: #3d526b;
+  border: 1px solid #c9d5e4;
+}
+
+.quote-view-status-sent {
+  background: #eaf3ff;
+  color: var(--qo-color-primary);
+  border: 1px solid #bfd6fb;
+}
+
+.quote-view-status-other {
+  background: #f4f1ea;
+  color: #6b5b45;
+  border: 1px solid #ddd2bf;
+}
+
+.quote-view-document {
+  padding: 22px 20px 18px;
+  border: 1px solid var(--qo-color-border);
+  border-radius: 12px;
+  background: var(--qo-color-surface);
+  box-shadow: var(--qo-shadow-sheet);
+}
+
+.quote-rewrite {
+  border: 1px solid var(--qo-color-primary);
+  background: var(--qo-color-surface);
+  color: var(--qo-color-primary);
+}
+
+.quote-rewrite:hover {
+  background: #f3f7ff;
 }
 
 .quote-email-modal {
@@ -83,17 +143,17 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(18, 38, 63, 0.45);
+  background: var(--qo-overlay-strong);
 }
 
 .quote-email-dialog {
-  width: min(100%, 420px);
+  width: min(100%, var(--qo-dialog-max));
   max-height: min(720px, calc(100svh - 48px));
   overflow: auto;
   padding: 20px;
   border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 16px 40px rgba(18, 38, 63, 0.16);
+  background: var(--qo-color-surface);
+  box-shadow: var(--qo-shadow-dialog);
 }
 
 .quote-email-head {
@@ -113,7 +173,7 @@
   height: 32px;
   border: 0;
   background: transparent;
-  color: #12263f;
+  color: var(--qo-color-text);
   font-size: 22px;
   line-height: 1;
 }
@@ -127,7 +187,7 @@
 .quote-email-form label {
   display: grid;
   gap: 6px;
-  color: #5d6d80;
+  color: var(--qo-color-muted);
   font-size: 13px;
   font-weight: 700;
 }
@@ -138,7 +198,7 @@
   padding: 8px 10px;
   border: 1px solid #d5deea;
   border-radius: 8px;
-  color: #12263f;
+  color: var(--qo-color-text);
   font: inherit;
   font-weight: 500;
 }
@@ -150,13 +210,13 @@
 
 .quote-email-form [role='alert'] {
   margin: 0;
-  color: #b42318;
+  color: var(--qo-color-danger-text);
   font-size: 14px;
 }
 
 .quote-email-form [role='status'] {
   margin: 0;
-  color: #1f6feb;
+  color: var(--qo-color-primary);
   font-size: 14px;
 }
 
@@ -167,7 +227,7 @@
 
 .quote-email-history p {
   margin: 8px 0 0;
-  color: #5d6d80;
+  color: var(--qo-color-muted);
   font-size: 13px;
 }
 
@@ -184,7 +244,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  color: #12263f;
+  color: var(--qo-color-text);
   font-size: 13px;
 }
 
@@ -192,10 +252,10 @@
   margin-left: auto;
   height: 28px;
   padding: 0 10px;
-  border: 1px solid #1f6feb;
+  border: 1px solid var(--qo-color-primary);
   border-radius: 6px;
-  background: #fff;
-  color: #1f6feb;
+  background: var(--qo-color-surface);
+  color: var(--qo-color-primary);
   font-size: 12px;
   font-weight: 700;
 }
@@ -216,48 +276,34 @@
 
 .quote-email-actions button[type='button'] {
   border: 1px solid #d5deea;
-  background: #fff;
-  color: #12263f;
+  background: var(--qo-color-surface);
+  color: var(--qo-color-text);
 }
 
 .quote-email-actions button[type='submit'] {
   border: 0;
-  background: #1f6feb;
+  background: var(--qo-color-primary);
   color: #fff;
 }
 
 .quote-email-actions button:disabled,
 .quote-email-history li button:disabled {
-  color: #8b9aab;
+  color: var(--qo-color-faint);
   background: #f4f7fb;
 }
 
-.quote-view-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+@media (max-width: 900px) {
+  .quote-view-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.quote-sent-notice {
-  margin: 12px 0 0;
-  color: #5d6d80;
-  font-size: 14px;
-}
+@media (max-width: 560px) {
+  .quote-view-meta {
+    grid-template-columns: 1fr;
+  }
 
-.quote-spec-note {
-  display: block;
-  margin-top: 4px;
-  color: #5d6d80;
-  font-size: 12px;
-}
-
-.quote-rewrite {
-  border: 1px solid #1f6feb;
-  background: #fff;
-  color: #1f6feb;
-}
-
-.quote-rewrite:hover {
-  background: #f3f7ff;
+  .quote-view-document {
+    padding: 16px 12px 14px;
+  }
 }

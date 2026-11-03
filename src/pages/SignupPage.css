@@ -14,45 +14,45 @@
   font-size: 13px;
   font-weight: 650;
   letter-spacing: -0.01em;
-  color: #24364c;
+  color: var(--qo-color-text-strong);
 }
 
 .signup-account {
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
-  border: 1px solid #d7e0ea;
+  border: 1px solid var(--qo-color-border);
   border-radius: 10px;
 }
 
 .signup-account button {
   height: 48px;
   border: 0;
-  background: #fff;
-  color: #24364c;
+  background: var(--qo-color-surface);
+  color: var(--qo-color-text-strong);
   font-size: 15px;
   font-weight: 650;
   cursor: pointer;
 }
 
 .signup-account button + button {
-  border-left: 1px solid #d7e0ea;
+  border-left: 1px solid var(--qo-color-border);
 }
 
 .signup-account button[aria-checked='true'] {
-  background: #eef4ff;
-  box-shadow: inset 0 0 0 1px #1f6feb;
-  color: #1f6feb;
+  background: var(--qo-color-surface-tint);
+  box-shadow: inset 0 0 0 1px var(--qo-color-primary);
+  color: var(--qo-color-primary);
 }
 
 .signup-account button:focus-visible {
-  outline: 2px solid #1f6feb;
+  outline: 2px solid var(--qo-color-primary);
   outline-offset: -2px;
 }
 
 .signup-note {
   margin: 0;
-  color: #5d6d80;
+  color: var(--qo-color-muted);
   font-size: 13px;
   line-height: 1.5;
   text-align: center;

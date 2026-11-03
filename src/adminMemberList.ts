@@ -41,6 +41,7 @@ export type MemberSummary = {
   companyName: string | null
   role: string
   status: string
+  deactivationReason?: string | null
 }
 
 export type MemberSummaryPage = {

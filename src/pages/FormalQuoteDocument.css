@@ -1,0 +1,187 @@
+.formal-quote {
+  color: var(--qo-color-text);
+}
+
+.formal-quote-title {
+  margin: 0 0 16px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.formal-quote-meta {
+  width: min(100%, 240px);
+  margin: 0 0 18px auto;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.formal-quote-meta th,
+.formal-quote-meta td,
+.formal-quote-supplier th,
+.formal-quote-supplier td,
+.formal-quote-items th,
+.formal-quote-items td,
+.formal-quote-totals th,
+.formal-quote-totals td {
+  border: 1px solid var(--qo-color-border-strong);
+  padding: 8px 10px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.formal-quote-meta th,
+.formal-quote-supplier th,
+.formal-quote-totals th {
+  background: #f3f6fa;
+  color: var(--qo-color-text-strong);
+  font-weight: 700;
+  text-align: left;
+}
+
+.formal-quote-meta th {
+  width: 36%;
+}
+
+.formal-quote-meta td,
+.formal-quote-totals td {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.formal-quote-supplier {
+  width: 100%;
+  margin: 0 0 14px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.formal-quote-supplier-group {
+  width: 64px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.formal-quote-supplier th[scope='row']:not(.formal-quote-supplier-group) {
+  width: 88px;
+}
+
+.formal-quote-intro {
+  margin: 0 0 10px;
+  color: var(--qo-color-text-strong);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.formal-quote-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 14px;
+}
+
+.formal-quote-items {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.formal-quote-col-no {
+  width: 5%;
+}
+
+.formal-quote-col-name {
+  width: 28%;
+}
+
+.formal-quote-col-code {
+  width: 18%;
+}
+
+.formal-quote-col-maker {
+  width: 16%;
+}
+
+.formal-quote-col-price {
+  width: 13%;
+}
+
+.formal-quote-col-qty {
+  width: 7%;
+}
+
+.formal-quote-col-amount {
+  width: 13%;
+}
+
+.formal-quote-items thead th {
+  background: #e8eef5;
+  color: var(--qo-color-text-strong);
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.4;
+  padding: 10px 8px;
+}
+
+.formal-quote-items td {
+  padding: 10px 8px;
+  line-height: 1.45;
+  vertical-align: middle;
+  overflow-wrap: break-word;
+}
+
+.formal-quote-no,
+.formal-quote-qty {
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.formal-quote-name {
+  text-align: left;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.formal-quote-code {
+  text-align: left;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.formal-quote-maker {
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.formal-quote-amount {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.formal-quote-empty {
+  text-align: center;
+  color: var(--qo-color-muted);
+}
+
+.formal-quote-totals {
+  width: min(100%, 280px);
+  margin: 0 0 12px auto;
+  border-collapse: collapse;
+}
+
+.formal-quote-grand th,
+.formal-quote-grand td {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.formal-quote-validity {
+  margin: 0;
+  color: var(--qo-color-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}

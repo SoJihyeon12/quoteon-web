@@ -8,11 +8,14 @@ export type CreateQuoteItemBody = {
   quantity: number
 }
 
+export type QuotePaymentMethod = 'CASH' | 'CARD'
+
 export type CreateQuoteBody = {
   customerId: number
   quoteDate: string
   items: CreateQuoteItemBody[]
   memo?: string
+  paymentMethod: QuotePaymentMethod
 }
 
 export type QuotePrice = {
@@ -28,6 +31,11 @@ const ITEMS_MESSAGE = '견적 항목을 한 개 이상 입력해 주세요.'
 const QUANTITY_MESSAGE = '수량은 1 이상이어야 합니다.'
 const DUPLICATE_MESSAGE = '같은 제품을 항목에 중복해서 넣을 수 없습니다.'
 const PRODUCT_MESSAGE = '제품을 선택해 주세요.'
+export const PAYMENT_METHOD_MESSAGE = '결제방법을 선택해 주세요.'
+export const PAYMENT_METHOD_OPTIONS = [
+  { value: 'CASH', label: '현금' },
+  { value: 'CARD', label: '신용카드' },
+] as const
 
 export function lineAmount(salePrice: number, quantity: number) {
   return toCents(salePrice) * quantity / 100
@@ -62,6 +70,7 @@ export function buildCreateQuoteBody(input: {
   quoteDate: string
   items: { productId: number; quantity: string }[]
   memo?: string
+  paymentMethod?: string | null
 }): { ok: true; body: CreateQuoteBody } | { ok: false; message: string } {
   const customerId = parseCustomerId(input.customerId)
   if (customerId === null) {
@@ -91,6 +100,11 @@ export function buildCreateQuoteBody(input: {
     items.push({ productId: item.productId, quantity })
   }
 
+  const paymentMethod = parsePaymentMethod(input.paymentMethod)
+  if (paymentMethod === null) {
+    return { ok: false, message: PAYMENT_METHOD_MESSAGE }
+  }
+
   const memo = input.memo?.trim() ?? ''
   return {
     ok: true,
@@ -98,9 +112,17 @@ export function buildCreateQuoteBody(input: {
       customerId,
       quoteDate: input.quoteDate.trim(),
       items,
+      paymentMethod,
       ...(memo ? { memo } : {}),
     },
   }
+}
+
+export function parsePaymentMethod(value: string | null | undefined): QuotePaymentMethod | null {
+  if (value === 'CASH' || value === 'CARD') {
+    return value
+  }
+  return null
 }
 
 function parseCustomerId(value: string) {

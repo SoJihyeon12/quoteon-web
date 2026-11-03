@@ -124,8 +124,16 @@ function ProductDetail({ productId }: { productId: number }) {
               </div>
             </div>
             <div className="admin-category-form-actions">
-              <button type="button" onClick={() => navigate(ADMIN_PRODUCTS_PATH)}>닫기</button>
-              <button type="button" onClick={() => navigate(adminProductEditPath(productId))}>수정</button>
+              <button type="button" onClick={() => navigate(ADMIN_PRODUCTS_PATH)}>
+                닫기
+              </button>
+              <button
+                type="button"
+                className="admin-product-primary"
+                onClick={() => navigate(adminProductEditPath(productId))}
+              >
+                수정
+              </button>
             </div>
           </>
         ) : null}

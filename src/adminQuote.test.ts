@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { CONNECTION_MESSAGE, CSRF_MESSAGE } from './loginDecision.ts'
 import { ADMIN_QUOTES_PATH, adminQuoteDetailPath, adminQuoteIdFromDetailPath } from './adminMenu.ts'
 import { fetchAdminQuote, fetchAdminQuotes } from './api/adminQuotes.ts'
+import { formalQuoteLinesFromAdminItems } from './quoteViewDocument.ts'
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 import {
   ADMIN_QUOTE_EMPTY,
   ADMIN_QUOTE_NOT_FOUND,
@@ -35,6 +41,45 @@ test('관리자 견적 목록과 상세 경로를 구분한다', () => {
   assert.equal(adminQuoteIdFromDetailPath('/admin/quotes'), null)
   assert.equal(adminQuoteIdFromDetailPath('/admin/quotes/0'), null)
   assert.equal(adminQuoteIdFromDetailPath('/quotes/15/view'), null)
+})
+
+test('관리자 견적 상세는 정식 견적서와 관리 사이드바를 쓰고 미리보기는 없다', () => {
+  const page = readFileSync(join(root, 'src/pages/AdminQuoteDetailPage.tsx'), 'utf8')
+  assert.match(page, /FormalQuoteDocument/)
+  assert.match(page, /admin-quote-side/)
+  assert.match(page, /PDF 다운로드/)
+  assert.match(page, /이미지 다운로드/)
+  assert.match(page, /삭제/)
+  assert.match(page, /updateAdminQuotePrivacy/)
+  assert.match(page, /비공개/)
+  assert.doesNotMatch(page, /미리보기/)
+})
+
+test('관리자 견적 항목은 정식 견적서 행으로 매핑한다', () => {
+  assert.deepEqual(
+    formalQuoteLinesFromAdminItems([
+      {
+        id: 9,
+        productName: '화이트 신발장',
+        productCode: 'SH-600',
+        specification: null,
+        specificationSource: null,
+        salePrice: 120000,
+        quantity: 1,
+        amount: 120000,
+      },
+    ]),
+    [
+      {
+        key: 9,
+        name: '화이트 신발장',
+        productCode: 'SH-600',
+        quantity: 1,
+        unitPrice: 120000,
+        amount: 120000,
+      },
+    ],
+  )
 })
 
 test('빈 검색은 10건 전체 목록을 요청한다', () => {

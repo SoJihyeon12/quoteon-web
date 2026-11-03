@@ -8,17 +8,22 @@ import {
   ADMIN_QUOTE_DELETE_TITLE,
   ADMIN_QUOTE_DETAIL_FAILED,
   ADMIN_QUOTE_NOT_FOUND,
-  ADMIN_QUOTE_PREVIEW_TITLE,
+  ADMIN_QUOTE_PRIVACY_CANCEL,
+  ADMIN_QUOTE_PRIVACY_FAILED,
+  ADMIN_QUOTE_PRIVATE_CONFIRM,
+  ADMIN_QUOTE_PRIVATE_DONE,
+  ADMIN_QUOTE_PRIVATE_MESSAGE,
+  ADMIN_QUOTE_PRIVATE_TITLE,
+  ADMIN_QUOTE_PUBLIC_CONFIRM,
+  ADMIN_QUOTE_PUBLIC_DONE,
+  ADMIN_QUOTE_PUBLIC_MESSAGE,
+  ADMIN_QUOTE_PUBLIC_TITLE,
   adminQuoteErrorMessage,
   adminQuoteStatusLabel,
   adminQuoteText,
-  formatAdminQuoteAmount,
   type AdminQuoteDetail,
-  type AdminQuoteItem,
 } from '../adminQuote.ts'
-import { recoveredSpecificationNote } from '../quoteForm.ts'
-import { WIREFRAME_SUPPLIER_EXAMPLE } from '../wireframeSupplier.ts'
-import { deleteAdminQuote, downloadAdminQuote, fetchAdminQuote } from '../api/adminQuotes.ts'
+import { deleteAdminQuote, downloadAdminQuote, fetchAdminQuote, updateAdminQuotePrivacy } from '../api/adminQuotes.ts'
 import {
   adminQuoteDownloadError,
   adminQuoteDownloadNotice,
@@ -27,12 +32,14 @@ import {
   saveAdminQuoteFile,
   type QuoteDownloadKind,
 } from '../adminQuoteDownload.ts'
+import FormalQuoteDocument from '../components/FormalQuoteDocument.tsx'
 import { navigate } from '../navigation.ts'
+import { formalQuoteLinesFromAdminItems } from '../quoteViewDocument.ts'
 import { redirectOnAccessFailure } from '../session.ts'
 import AdminShell from './AdminShell.tsx'
 import './AdminHomePage.css'
-import './QuoteViewPage.css'
-import './QuotePreviewPage.css'
+import './FormalQuoteDocument.css'
+import './AdminQuoteDetailPage.css'
 
 export default function AdminQuoteDetailPage({ quoteId }: { quoteId: number }) {
   return (
@@ -43,7 +50,23 @@ export default function AdminQuoteDetailPage({ quoteId }: { quoteId: number }) {
 }
 
 function isAdminQuoteDetail(value: AdminQuoteDetail | undefined): value is AdminQuoteDetail {
-  return Boolean(value && typeof value.quoteNumber === 'string' && value.customer && Array.isArray(value.items))
+  return Boolean(
+    value &&
+      typeof value.quoteNumber === 'string' &&
+      value.customer &&
+      Array.isArray(value.items) &&
+      typeof value.isPrivate === 'boolean',
+  )
+}
+
+function statusTone(status: string) {
+  if (status === 'DRAFT') {
+    return 'draft'
+  }
+  if (status === 'SENT') {
+    return 'sent'
+  }
+  return 'other'
 }
 
 function QuoteDetail({ quoteId }: { quoteId: number }) {
@@ -54,10 +77,13 @@ function QuoteDetail({ quoteId }: { quoteId: number }) {
   const [downloadKind, setDownloadKind] = useState<QuoteDownloadKind | null>(null)
   const [downloadNotice, setDownloadNotice] = useState('')
   const [downloadMessage, setDownloadMessage] = useState('')
-  const [previewOpen, setPreviewOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteMessage, setDeleteMessage] = useState('')
+  const [privacyOpen, setPrivacyOpen] = useState(false)
+  const [privacyBusy, setPrivacyBusy] = useState(false)
+  const [privacyMessage, setPrivacyMessage] = useState('')
+  const [privacyNotice, setPrivacyNotice] = useState('')
   const downloadRef = useRef(false)
 
   useEffect(() => {
@@ -102,6 +128,29 @@ function QuoteDetail({ quoteId }: { quoteId: number }) {
     navigate(ADMIN_QUOTES_PATH)
   }
 
+  async function confirmPrivacy() {
+    if (!quote || privacyBusy) {
+      return
+    }
+    const nextPrivate = !quote.isPrivate
+    setPrivacyBusy(true)
+    setPrivacyMessage('')
+    setPrivacyNotice('')
+    const result = await updateAdminQuotePrivacy(quoteId, nextPrivate)
+    if (redirectOnAccessFailure(result)) {
+      return
+    }
+    if (!result.ok || !isAdminQuoteDetail(result.data)) {
+      setPrivacyBusy(false)
+      setPrivacyMessage(adminQuoteErrorMessage(result, ADMIN_QUOTE_PRIVACY_FAILED))
+      return
+    }
+    setQuote(result.data)
+    setPrivacyBusy(false)
+    setPrivacyOpen(false)
+    setPrivacyNotice(nextPrivate ? ADMIN_QUOTE_PRIVATE_DONE : ADMIN_QUOTE_PUBLIC_DONE)
+  }
+
   async function download(kind: QuoteDownloadKind) {
     if (!canStartAdminQuoteDownload(downloadRef.current)) {
       return
@@ -139,146 +188,45 @@ function QuoteDetail({ quoteId }: { quoteId: number }) {
       <header className="admin-heading">
         <h1>견적서</h1>
       </header>
-      <section className="admin-product-panel admin-quote-detail">
+      <section className="admin-product-panel admin-quote-detail" aria-labelledby="admin-quote-detail-title">
         <div className="admin-edit-head">
-          <h2>견적서 상세</h2>
-          {loadState === 'ready' && quote ? (
-            <div className="admin-quote-downloads">
-              <button type="button" disabled={downloading} onClick={() => void download('pdf')}>
-                {downloading && downloadKind === 'pdf' ? '다운로드 중' : 'PDF 다운로드'}
-              </button>
-              <button type="button" disabled={downloading} onClick={() => void download('png')}>
-                {downloading && downloadKind === 'png' ? '다운로드 중' : '이미지 다운로드'}
-              </button>
-              <button type="button" onClick={() => setPreviewOpen(true)}>
-                미리보기
-              </button>
-              <button type="button" className="admin-category-delete" onClick={() => setDeleteOpen(true)}>
-                삭제
-              </button>
-            </div>
-          ) : null}
-          <button
-            type="button"
-            className="admin-edit-close"
-            aria-label="목록으로"
-            onClick={() => navigate(ADMIN_QUOTES_PATH)}
-          >
-            ×
-          </button>
+          <h2 id="admin-quote-detail-title">견적서 상세</h2>
         </div>
         {loadState === 'loading' ? <p role="status">견적서를 불러오는 중입니다.</p> : null}
         {loadState === 'error' ? <p className="admin-message" role="alert">{loadMessage || ADMIN_QUOTE_NOT_FOUND}</p> : null}
         {loadState === 'ready' && quote ? (
-          <>
-            <h3>작성 정보</h3>
-            <dl className="admin-product-fields">
-              <div>
-                <dt>견적 번호</dt>
-                <dd>{quote.quoteNumber}</dd>
-              </div>
-              <div>
-                <dt>작성일</dt>
-                <dd>{quote.quoteDate}</dd>
-              </div>
-              <div>
-                <dt>작성자</dt>
-                <dd>{quote.authorName}</dd>
-              </div>
-              <div>
-                <dt>상태</dt>
-                <dd>{adminQuoteStatusLabel(quote.status)}</dd>
-              </div>
-            </dl>
-            <h3>고객 정보</h3>
-            <dl className="admin-product-fields">
-              <div>
-                <dt>고객명</dt>
-                <dd>{adminQuoteText(quote.customer.name)}</dd>
-              </div>
-              <div>
-                <dt>고객 유형</dt>
-                <dd>{adminQuoteText(quote.customer.customerType)}</dd>
-              </div>
-              <div>
-                <dt>전화번호</dt>
-                <dd>{adminQuoteText(quote.customer.phone)}</dd>
-              </div>
-              <div>
-                <dt>이메일</dt>
-                <dd>{adminQuoteText(quote.customer.email)}</dd>
-              </div>
-              <div>
-                <dt>주소</dt>
-                <dd>{adminQuoteText(quote.customer.address)}</dd>
-              </div>
-            </dl>
-            <h3>공급자 정보</h3>
-            <WireframeSupplierTable />
-            <h3>견적 항목</h3>
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th scope="col">제품명</th>
-                    <th scope="col">제품 코드</th>
-                    <th scope="col">규격</th>
-                    <th scope="col">수량</th>
-                    <th scope="col">단가</th>
-                    <th scope="col">금액</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quote.items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.productName}</td>
-                      <td>{item.productCode}</td>
-                      <SpecificationCell item={item} />
-                      <td>{item.quantity}</td>
-                      <td>{formatAdminQuoteAmount(item.salePrice)}</td>
-                      <td>{formatAdminQuoteAmount(item.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <h3>금액 정보</h3>
-            <dl className="admin-product-fields">
-              <div>
-                <dt>공급가액</dt>
-                <dd>{formatAdminQuoteAmount(quote.supplyAmount)}</dd>
-              </div>
-              <div>
-                <dt>부가세</dt>
-                <dd>{formatAdminQuoteAmount(quote.vatAmount)}</dd>
-              </div>
-              <div>
-                <dt>총금액</dt>
-                <dd>{formatAdminQuoteAmount(quote.totalAmount)}</dd>
-              </div>
-            </dl>
-            <h3>메모</h3>
-            <p>{adminQuoteText(quote.memo)}</p>
-            {downloadNotice ? <p className="admin-quote-notice" role="status">{downloadNotice}</p> : null}
-            {downloadMessage ? <p className="admin-message" role="alert">{downloadMessage}</p> : null}
-          </>
-        ) : null}
-        {previewOpen && quote ? (
-          <div className="admin-dialog-backdrop">
-            <article className="quote-preview-sheet" aria-labelledby="admin-quote-preview-title">
-              <div className="quote-preview-toolbar">
-                <button type="button" onClick={() => setPreviewOpen(false)}>
-                  닫기
+          <div className="admin-quote-detail-layout">
+            <article className="admin-quote-document" aria-label="견적서 본문">
+              <FormalQuoteDocument
+                titleId="admin-quote-document-title"
+                authorName={quote.authorName}
+                customerName={adminQuoteText(quote.customer.name)}
+                quoteDate={quote.quoteDate}
+                totalAmount={quote.totalAmount}
+                supplyAmount={quote.supplyAmount}
+                vatAmount={quote.vatAmount}
+                lines={formalQuoteLinesFromAdminItems(quote.items)}
+              />
+            </article>
+
+            <aside className="admin-quote-side" aria-label="견적 관리 정보">
+              <div className="admin-quote-side-head">
+                <h3>관리 정보</h3>
+                <button
+                  type="button"
+                  className="admin-edit-close"
+                  aria-label="목록으로"
+                  onClick={() => navigate(ADMIN_QUOTES_PATH)}
+                >
+                  ×
                 </button>
               </div>
-              <header className="quote-preview-heading">
-                <h2 id="admin-quote-preview-title">{ADMIN_QUOTE_PREVIEW_TITLE}</h2>
-                <p>
-                  <span>작성일</span>
-                  <time dateTime={quote.quoteDate}>{quote.quoteDate}</time>
-                </p>
-              </header>
-              <dl className="quote-preview-parties">
+
+              <dl className="admin-quote-side-meta">
+                <div>
+                  <dt>견적번호</dt>
+                  <dd>{quote.quoteNumber}</dd>
+                </div>
                 <div>
                   <dt>작성자</dt>
                   <dd>{adminQuoteText(quote.authorName)}</dd>
@@ -287,61 +235,115 @@ function QuoteDetail({ quoteId }: { quoteId: number }) {
                   <dt>고객</dt>
                   <dd>{adminQuoteText(quote.customer.name)}</dd>
                 </div>
+                <div>
+                  <dt>견적일</dt>
+                  <dd>
+                    <time dateTime={quote.quoteDate}>{quote.quoteDate}</time>
+                  </dd>
+                </div>
+                <div>
+                  <dt>상태</dt>
+                  <dd>
+                    <span className={`admin-quote-status admin-quote-status-${statusTone(quote.status)}`}>
+                      {adminQuoteStatusLabel(quote.status)}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>공개 여부</dt>
+                  <dd>
+                    <span className={`admin-quote-privacy admin-quote-privacy-${quote.isPrivate ? 'private' : 'public'}`}>
+                      {quote.isPrivate ? '비공개' : '공개'}
+                    </span>
+                  </dd>
+                </div>
               </dl>
-              <WireframeSupplierTable />
-              <div className="quote-table-wrap">
-                <table className="quote-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">제품명</th>
-                      <th scope="col">제품 코드</th>
-                      <th scope="col">규격</th>
-                      <th scope="col">수량</th>
-                      <th scope="col">단가</th>
-                      <th scope="col">금액</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {quote.items.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.productName}</td>
-                        <td>{item.productCode}</td>
-                        <SpecificationCell item={item} />
-                        <td>{item.quantity}</td>
-                        <td>{formatAdminQuoteAmount(item.salePrice)}</td>
-                        <td>{formatAdminQuoteAmount(item.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+              <div className="admin-quote-side-memo">
+                <h4>메모</h4>
+                <p>{adminQuoteText(quote.memo)}</p>
               </div>
-              <dl className="quote-view-summary">
-                <div>
-                  <dt>공급가액</dt>
-                  <dd>{formatAdminQuoteAmount(quote.supplyAmount)}</dd>
-                </div>
-                <div>
-                  <dt>부가세</dt>
-                  <dd>{formatAdminQuoteAmount(quote.vatAmount)}</dd>
-                </div>
-                <div>
-                  <dt>총금액</dt>
-                  <dd>{formatAdminQuoteAmount(quote.totalAmount)}</dd>
-                </div>
-              </dl>
-              <p>
-                <span>메모 </span>
-                {adminQuoteText(quote.memo)}
-              </p>
-            </article>
+
+              <div className="admin-quote-side-actions">
+                <button type="button" className="admin-quote-action-primary" disabled={downloading} onClick={() => void download('pdf')}>
+                  {downloading && downloadKind === 'pdf' ? '다운로드 중' : 'PDF 다운로드'}
+                </button>
+                <button type="button" className="admin-quote-action-primary" disabled={downloading} onClick={() => void download('png')}>
+                  {downloading && downloadKind === 'png' ? '다운로드 중' : '이미지 다운로드'}
+                </button>
+                <button
+                  type="button"
+                  className="admin-quote-action-privacy"
+                  onClick={() => {
+                    setPrivacyMessage('')
+                    setPrivacyOpen(true)
+                  }}
+                >
+                  {quote.isPrivate ? '공개' : '비공개'}
+                </button>
+                <button type="button" className="admin-quote-action-danger" onClick={() => setDeleteOpen(true)}>
+                  삭제
+                </button>
+              </div>
+
+              {privacyNotice ? (
+                <p className="admin-quote-notice" role="status">
+                  {privacyNotice}
+                </p>
+              ) : null}
+              {downloadNotice ? (
+                <p className="admin-quote-notice" role="status">
+                  {downloadNotice}
+                </p>
+              ) : null}
+              {downloadMessage ? (
+                <p className="admin-message" role="alert">
+                  {downloadMessage}
+                </p>
+              ) : null}
+            </aside>
           </div>
         ) : null}
+
+        {privacyOpen && quote ? (
+          <div className="admin-dialog-backdrop">
+            <div className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-quote-privacy-title">
+              <h2 id="admin-quote-privacy-title">
+                {quote.isPrivate ? ADMIN_QUOTE_PUBLIC_TITLE : ADMIN_QUOTE_PRIVATE_TITLE}
+              </h2>
+              <p>{quote.isPrivate ? ADMIN_QUOTE_PUBLIC_MESSAGE : ADMIN_QUOTE_PRIVATE_MESSAGE}</p>
+              {privacyMessage ? (
+                <p className="admin-message" role="alert">
+                  {privacyMessage}
+                </p>
+              ) : null}
+              <div className="admin-dialog-actions">
+                <button
+                  type="button"
+                  className="admin-dialog-cancel"
+                  disabled={privacyBusy}
+                  onClick={() => setPrivacyOpen(false)}
+                >
+                  {ADMIN_QUOTE_PRIVACY_CANCEL}
+                </button>
+                <button type="button" className="admin-dialog-confirm" disabled={privacyBusy} onClick={() => void confirmPrivacy()}>
+                  {privacyBusy ? '변경 중' : quote.isPrivate ? ADMIN_QUOTE_PUBLIC_CONFIRM : ADMIN_QUOTE_PRIVATE_CONFIRM}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {deleteOpen ? (
           <div className="admin-dialog-backdrop">
             <div className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-quote-delete-title">
               <h2 id="admin-quote-delete-title">{ADMIN_QUOTE_DELETE_TITLE}</h2>
               <p>{ADMIN_QUOTE_DELETE_MESSAGE}</p>
-              {deleteMessage ? <p className="admin-message" role="alert">{deleteMessage}</p> : null}
+              {deleteMessage ? (
+                <p className="admin-message" role="alert">
+                  {deleteMessage}
+                </p>
+              ) : null}
               <div className="admin-dialog-actions">
                 <button type="button" className="admin-dialog-cancel" disabled={deleting} onClick={() => setDeleteOpen(false)}>
                   {ADMIN_QUOTE_DELETE_CANCEL}
@@ -355,35 +357,5 @@ function QuoteDetail({ quoteId }: { quoteId: number }) {
         ) : null}
       </section>
     </>
-  )
-}
-
-function WireframeSupplierTable() {
-  return (
-    <table className="quote-supplier">
-      <tbody>
-        {WIREFRAME_SUPPLIER_EXAMPLE.map((field, index) => (
-          <tr key={field.label}>
-            {index === 0 ? (
-              <th className="quote-supplier-group" rowSpan={WIREFRAME_SUPPLIER_EXAMPLE.length} scope="rowgroup">
-                공급자
-              </th>
-            ) : null}
-            <th scope="row">{field.label}</th>
-            <td>{field.value}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
-}
-
-function SpecificationCell({ item }: { item: AdminQuoteItem }) {
-  const note = recoveredSpecificationNote(item.specificationSource)
-  return (
-    <td>
-      {adminQuoteText(item.specification)}
-      {note ? <span className="quote-spec-note">{note}</span> : null}
-    </td>
   )
 }

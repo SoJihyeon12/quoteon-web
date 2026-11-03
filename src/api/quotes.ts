@@ -38,6 +38,7 @@ export type QuoteItem = {
 
 export type QuoteDetail = CreatedQuote & {
   memo: string | null
+  paymentMethod: 'CASH' | 'CARD' | null
   items: QuoteItem[]
 }
 

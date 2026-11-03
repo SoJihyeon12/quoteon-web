@@ -23,7 +23,7 @@ function failure(status: number, code: string, message: string) {
   return { ok: false as const, status, error }
 }
 
-test('고객 상세 화면이 부르는 비활성화 함수가 내보내져 있다', () => {
+test('고객 비활성화 API 함수가 모듈에 유지된다', () => {
   assert.equal(typeof deactivateCustomer, 'function')
 })
 

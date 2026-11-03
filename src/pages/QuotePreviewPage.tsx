@@ -1,28 +1,44 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fetchCurrentMember } from '../api/auth.ts'
+import { downloadQuote } from '../api/quotes.ts'
+import FormalQuoteDocument from '../components/FormalQuoteDocument.tsx'
 import LogoutButton from '../components/LogoutButton.tsx'
-import { formatAmount } from '../quoteList.ts'
-import { previewQuote, quotePreviewFromHistory, returnToQuoteWorkbench } from '../quotePreview.ts'
-import { redirectUnless } from '../session.ts'
+import QuoteEmailDialog from '../components/QuoteEmailDialog.tsx'
+import {
+  canStartSalesQuoteDownload,
+  salesQuoteDownloadError,
+  salesQuoteDownloadReady,
+  saveSalesQuoteFile,
+  type SalesQuoteDownloadKind,
+} from '../quoteDownload.ts'
+import {
+  PREVIEW_DOCUMENT_REQUIRES_SAVED_QUOTE,
+  previewQuote,
+  previewSavedQuoteId,
+  quotePreviewFromHistory,
+  returnToQuoteWorkbench,
+} from '../quotePreview.ts'
+import { redirectOnAccessFailure, redirectUnless } from '../session.ts'
 import './ConsultationPage.css'
-import './QuoteListPage.css'
 import './QuoteViewPage.css'
+import './FormalQuoteDocument.css'
 import './QuotePreviewPage.css'
 
 function isSalesMember(member: { role: string; status: string }) {
   return member.status === 'ACTIVE' && member.role === 'ROLE_USER'
 }
 
-function displayText(value: string) {
-  const trimmed = value.trim()
-  return trimmed || '-'
-}
-
 export default function QuotePreviewPage() {
   const [memberName, setMemberName] = useState('')
   const [ready, setReady] = useState(false)
   const [draft] = useState(() => quotePreviewFromHistory(window.history.state))
+  const [downloading, setDownloading] = useState(false)
+  const [actionMessage, setActionMessage] = useState('')
+  const [emailOpen, setEmailOpen] = useState(false)
+  const downloadRef = useRef(false)
   const preview = draft ? previewQuote(draft) : null
+  const savedQuoteId = previewSavedQuoteId(draft)
+  const memoText = draft?.memo.trim() ?? ''
 
   useEffect(() => {
     let cancelled = false
@@ -43,6 +59,58 @@ export default function QuotePreviewPage() {
 
   function returnToWorkbench() {
     returnToQuoteWorkbench(draft)
+  }
+
+  function requireSavedQuote() {
+    if (savedQuoteId !== null) {
+      return true
+    }
+    setActionMessage(PREVIEW_DOCUMENT_REQUIRES_SAVED_QUOTE)
+    return false
+  }
+
+  async function download(kind: SalesQuoteDownloadKind) {
+    if (!requireSavedQuote() || savedQuoteId === null) {
+      return
+    }
+    if (!canStartSalesQuoteDownload(downloadRef.current)) {
+      return
+    }
+    downloadRef.current = true
+    setDownloading(true)
+    setActionMessage('')
+    try {
+      const result = await downloadQuote(savedQuoteId, kind)
+      if (redirectOnAccessFailure(result)) {
+        return
+      }
+      if (!result.ok) {
+        setActionMessage(salesQuoteDownloadError(result))
+        return
+      }
+      const readyFile = salesQuoteDownloadReady(
+        kind,
+        result.data.contentType,
+        result.data.disposition,
+        result.data.bytes,
+      )
+      if (!readyFile) {
+        setActionMessage(salesQuoteDownloadError({ ok: false, status: result.status, error: null }))
+        return
+      }
+      saveSalesQuoteFile(readyFile.filename, result.data.bytes, readyFile.mediaType)
+    } finally {
+      downloadRef.current = false
+      setDownloading(false)
+    }
+  }
+
+  function openEmail() {
+    if (!requireSavedQuote()) {
+      return
+    }
+    setActionMessage('')
+    setEmailOpen(true)
   }
 
   return (
@@ -80,80 +148,76 @@ export default function QuotePreviewPage() {
           <p className="quote-empty" role="status">
             로그인 상태를 확인하는 중입니다.
           </p>
+        ) : !draft || !preview ? (
+          <article className="quote-preview-sheet quote-preview-sheet-empty">
+            <p className="quote-empty" role="status">
+              미리볼 견적 내용이 없습니다. 상담 작업대에서 견적서 미리보기를 열어 주세요.
+            </p>
+            <button type="button" className="quote-preview-edit" onClick={returnToWorkbench}>
+              상담 작업대로 이동
+            </button>
+          </article>
         ) : (
           <article className="quote-preview-sheet">
             <div className="quote-preview-toolbar">
-              <button type="button" onClick={returnToWorkbench}>
-                수정
-              </button>
-              <button type="button" aria-label="나가기" onClick={returnToWorkbench}>
+              <div className="quote-preview-toolbar-actions" role="group" aria-label="견적서 저장 및 전송">
+                <button type="button" disabled={downloading} onClick={() => void download('pdf')}>
+                  PDF
+                </button>
+                <button type="button" disabled={downloading} onClick={() => void download('jpeg')}>
+                  JPEG
+                </button>
+                <button type="button" disabled={downloading} onClick={() => void download('png')}>
+                  PNG
+                </button>
+                <button type="button" disabled={downloading} onClick={openEmail}>
+                  이메일전송
+                </button>
+                <button type="button" className="quote-preview-edit" onClick={returnToWorkbench}>
+                  수정
+                </button>
+              </div>
+              <button type="button" className="quote-preview-close" aria-label="나가기" onClick={returnToWorkbench}>
                 ×
               </button>
             </div>
-            <header className="quote-preview-heading">
-              <h1 id="quote-preview-title">견적서 미리보기</h1>
-              <p>
-                <span>작성일</span>
-                <time dateTime={preview?.writtenOn || undefined}>{displayText(preview?.writtenOn ?? '')}</time>
+            {actionMessage ? (
+              <p className="quote-preview-action-message" role="alert">
+                {actionMessage}
               </p>
-            </header>
-            <dl className="quote-preview-parties">
-              <div>
-                <dt>작성자</dt>
-                <dd>{displayText(memberName)}</dd>
+            ) : null}
+
+            <div className="quote-preview-document">
+              <FormalQuoteDocument
+                titleId="quote-preview-title"
+                authorName={memberName}
+                customerName={preview.customerName}
+                quoteDate={preview.writtenOn}
+                dateLabel="작성일"
+                totalAmount={preview.totalAmount}
+                supplyAmount={preview.supplyAmount}
+                vatAmount={preview.vatAmount}
+                lines={preview.rows.map((row) => ({
+                  key: row.productId,
+                  name: row.name,
+                  productCode: row.productCode,
+                  quantity: row.quantity,
+                  unitPrice: row.unitPrice,
+                  amount: row.amount,
+                }))}
+              />
+
+              <div className="quote-preview-memo" aria-label="내부 메모">
+                <span className="quote-preview-memo-label">메모</span>
+                <p className="quote-preview-memo-text">{memoText || '-'}</p>
               </div>
-              <div>
-                <dt>고객</dt>
-                <dd>{displayText(preview?.customerName ?? '')}</dd>
-              </div>
-            </dl>
-            <div className="quote-table-wrap">
-              <table className="quote-table">
-                <thead>
-                  <tr>
-                    <th scope="col">제품명</th>
-                    <th scope="col">제품 코드</th>
-                    <th scope="col" className="quote-amount">
-                      수량
-                    </th>
-                    <th scope="col" className="quote-amount">
-                      단가
-                    </th>
-                    <th scope="col" className="quote-amount">
-                      금액
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview?.rows.map((row) => (
-                    <tr key={row.productId}>
-                      <td>{row.name}</td>
-                      <td>{row.productCode}</td>
-                      <td className="quote-amount">{row.quantity}</td>
-                      <td className="quote-amount">{formatAmount(row.unitPrice)}</td>
-                      <td className="quote-amount">{row.amount === null ? '-' : formatAmount(row.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-            <dl className="quote-view-summary">
-              <div>
-                <dt>공급가액</dt>
-                <dd>{formatAmount(preview?.supplyAmount ?? 0)}</dd>
-              </div>
-              <div>
-                <dt>부가세</dt>
-                <dd>{formatAmount(preview?.vatAmount ?? 0)}</dd>
-              </div>
-              <div>
-                <dt>합계</dt>
-                <dd>{formatAmount(preview?.totalAmount ?? 0)}</dd>
-              </div>
-            </dl>
           </article>
         )}
       </section>
+      {emailOpen && savedQuoteId !== null ? (
+        <QuoteEmailDialog quoteId={savedQuoteId} onClose={() => setEmailOpen(false)} />
+      ) : null}
     </div>
   )
 }

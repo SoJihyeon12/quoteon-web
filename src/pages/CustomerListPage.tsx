@@ -181,26 +181,28 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
             </button>
           ))}
         </nav>
-      <section className="quote-panel" aria-labelledby="customer-list-title">
+      <section className="quote-panel customer-list-panel" aria-labelledby="customer-list-title">
         <div className="quote-heading">
-          <h1 id="customer-list-title">고객</h1>
+          <h1 id="customer-list-title">고객 목록</h1>
+        </div>
+        <div className="customer-list-toolbar">
+          <form className="customer-list-search" onSubmit={handleSearch}>
+            <label className="visually-hidden" htmlFor="customer-list-search">
+              고객명 또는 연락처
+            </label>
+            <input
+              id="customer-list-search"
+              type="search"
+              placeholder="고객명, 연락처"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+            <button type="submit">검색</button>
+          </form>
           <a className="quote-create" href="/customers/new">
-            고객 등록
+            + 고객 등록
           </a>
         </div>
-        <form className="customer-list-search" onSubmit={handleSearch}>
-          <label className="visually-hidden" htmlFor="customer-list-search">
-            고객명 또는 연락처
-          </label>
-          <input
-            id="customer-list-search"
-            type="search"
-            placeholder="고객명, 연락처"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
-          <button type="submit">검색</button>
-        </form>
         {listState === 'loading' ? (
           <p className="quote-empty" role="status">
             고객 목록을 불러오는 중입니다.
@@ -239,12 +241,15 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
                     <td>{displayPhone(item.phone)}</td>
                     <td>{item.customerType}</td>
                     <td>
-                      <a className="customer-pick" href={customerDetailPath(item.id)}>
+                      <a className="customer-pick customer-list-action" href={customerDetailPath(item.id)}>
                         상세 보기
                       </a>
                     </td>
                     <td>
-                      <a className="customer-pick" href={quoteFromCustomerPath(item.id)}>
+                      <a
+                        className="customer-pick customer-list-action customer-list-quote"
+                        href={quoteFromCustomerPath(item.id)}
+                      >
                         견적 시작
                       </a>
                     </td>
@@ -283,9 +288,22 @@ export default function CustomerListPage({ creating }: { creating: boolean }) {
       </div>
       {creating ? (
         <div className="customer-modal">
-          <div className="customer-dialog" role="dialog" aria-modal="true" aria-labelledby="customer-create-title">
+          <div
+            className="customer-dialog customer-create-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="customer-create-title"
+          >
             <div className="customer-dialog-head">
               <h2 id="customer-create-title">고객 등록</h2>
+              <button
+                type="button"
+                className="dialog-close"
+                aria-label="닫기"
+                onClick={() => navigate('/customers')}
+              >
+                ×
+              </button>
             </div>
             <form className="customer-create-form" onSubmit={handleCreate}>
               <label>

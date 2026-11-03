@@ -1,0 +1,70 @@
+:root {
+  /* Color */
+  --qo-color-text: #12263f;
+  --qo-color-text-strong: #24364c;
+  --qo-color-muted: #5d6d80;
+  --qo-color-faint: #8b9aab;
+  --qo-color-border: #d7e0ea;
+  --qo-color-border-soft: #e6edf5;
+  --qo-color-border-strong: #9aa8b8;
+  --qo-color-border-control: #d0d7e2;
+  --qo-color-surface: #fff;
+  --qo-color-surface-muted: #f7f9fc;
+  --qo-color-surface-tint: #eef4ff;
+  --qo-color-surface-panel: #eef3f9;
+  --qo-color-primary: #1f6feb;
+  --qo-color-primary-hover: #1858c7;
+  --qo-color-danger: #c53434;
+  --qo-color-danger-text: #b42318;
+  --qo-color-focus: #1f6feb;
+  --qo-color-success-text: #1f6feb;
+
+  /* Radius */
+  --qo-radius-sm: 6px;
+  --qo-radius-md: 8px;
+  --qo-radius-lg: 12px;
+  --qo-radius-xl: 16px;
+  --qo-radius-control: 10px;
+
+  /* Space */
+  --qo-space-1: 4px;
+  --qo-space-2: 8px;
+  --qo-space-3: 12px;
+  --qo-space-4: 16px;
+  --qo-space-5: 24px;
+  --qo-space-6: 28px;
+  --qo-space-7: 32px;
+
+  /* Type */
+  --qo-font-size-sm: 12px;
+  --qo-font-size-md: 13px;
+  --qo-font-size-body: 14px;
+  --qo-font-size-nav: 15px;
+  --qo-font-size-title: 20px;
+  --qo-font-size-heading: 24px;
+  --qo-font-size-brand: 28px;
+  --qo-font-weight-body: 500;
+  --qo-font-weight-label: 650;
+  --qo-font-weight-bold: 700;
+  --qo-font-weight-heavy: 750;
+
+  /* Control sizes */
+  --qo-btn-height: 36px;
+  --qo-btn-height-sm: 32px;
+  --qo-btn-height-lg: 44px;
+  --qo-btn-height-dialog: 40px;
+  --qo-input-height: 44px;
+  --qo-input-height-auth: 48px;
+  --qo-header-height: 64px;
+
+  /* Layout */
+  --qo-content-max: 1100px;
+  --qo-dialog-max: 420px;
+
+  /* Elevation */
+  --qo-shadow-sheet: 0 10px 28px rgba(18, 38, 63, 0.06);
+  --qo-shadow-card: 0 16px 40px rgba(18, 38, 63, 0.08);
+  --qo-shadow-dialog: 0 16px 40px rgba(18, 38, 63, 0.16);
+  --qo-overlay: rgba(18, 38, 63, 0.35);
+  --qo-overlay-strong: rgba(18, 38, 63, 0.45);
+}

@@ -3,6 +3,7 @@ import { adminErrorMessage, memberRoleLabel } from '../adminMemberList.ts'
 import { ADMIN_MEMBERS_PATH, memberEditPath } from '../adminMenu.ts'
 import { activateMember, deactivateMember, fetchMember, updateMember } from '../api/adminMembers.ts'
 import {
+  buildDeactivateMemberBody,
   buildMemberUpdateBody,
   canActivateMember,
   canConfirmMemberActivate,
@@ -18,14 +19,17 @@ import {
   MEMBER_DEACTIVATE_BLOCKED,
   MEMBER_DEACTIVATE_CANCEL,
   MEMBER_DEACTIVATE_CONFIRM,
+  MEMBER_DEACTIVATE_FINAL_CONFIRM,
   MEMBER_DEACTIVATE_MESSAGE,
   MEMBER_DEACTIVATE_NOTE,
   MEMBER_DEACTIVATE_TITLE,
+  MEMBER_DEACTIVATION_REASONS,
   MEMBER_NOT_FOUND,
   MEMBER_ROLE_OPTIONS,
   memberActivateOutcome,
   memberDeactivateOutcome,
   memberEditSaveResult,
+  validateMemberDeactivation,
   validateMemberEdit,
   type MemberEditErrors,
 } from '../memberEdit.ts'
@@ -49,12 +53,16 @@ function MemberEditForm({ memberId }: { memberId: number }) {
   const [companyName, setCompanyName] = useState('')
   const [role, setRole] = useState('ROLE_USER')
   const [status, setStatus] = useState('')
+  const [deactivationReason, setDeactivationReason] = useState<string | null>(null)
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [loadMessage, setLoadMessage] = useState('')
   const [fieldErrors, setFieldErrors] = useState<MemberEditErrors>({})
   const [formMessage, setFormMessage] = useState('')
   const [saving, setSaving] = useState(false)
   const [dialog, setDialog] = useState<null | 'deactivate' | 'activate'>(null)
+  const [reasonCode, setReasonCode] = useState('')
+  const [reasonDetail, setReasonDetail] = useState('')
+  const [reasonError, setReasonError] = useState('')
   const [statusActing, setStatusActing] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
   const busyRef = useRef(false)
@@ -79,6 +87,7 @@ function MemberEditForm({ memberId }: { memberId: number }) {
       setCompanyName(result.data.companyName ?? '')
       setRole(result.data.role)
       setStatus(result.data.status)
+      setDeactivationReason(result.data.deactivationReason ?? null)
       setLoadState('ready')
     })
     return () => {
@@ -93,6 +102,7 @@ function MemberEditForm({ memberId }: { memberId: number }) {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !busyRef.current) {
         setStatusMessage('')
+        setReasonError('')
         setDialog(null)
       }
     }
@@ -117,6 +127,9 @@ function MemberEditForm({ memberId }: { memberId: number }) {
       return
     }
     setStatusMessage('')
+    setReasonCode('')
+    setReasonDetail('')
+    setReasonError('')
     setDialog('deactivate')
   }
 
@@ -138,18 +151,31 @@ function MemberEditForm({ memberId }: { memberId: number }) {
       return
     }
     setStatusMessage('')
+    setReasonError('')
     setDialog(null)
   }
 
   async function confirmDeactivate() {
-    if (!canConfirmMemberDeactivate(dialog === 'deactivate', busyRef.current, status)) {
+    if (!canConfirmMemberDeactivate(dialog === 'deactivate', busyRef.current, status, reasonCode, reasonDetail)) {
+      const validation = validateMemberDeactivation({ reasonCode, reasonDetail })
+      if (validation) {
+        setReasonError(validation)
+      }
+      return
+    }
+    if (!window.confirm(MEMBER_DEACTIVATE_FINAL_CONFIRM)) {
+      return
+    }
+    const body = buildDeactivateMemberBody({ reasonCode, reasonDetail })
+    if (!body) {
       return
     }
     busyRef.current = true
     setStatusActing(true)
     setStatusMessage('')
+    setReasonError('')
     try {
-      const result = await deactivateMember(memberId)
+      const result = await deactivateMember(memberId, body)
       if (redirectOnAccessFailure(result)) {
         return
       }
@@ -203,7 +229,11 @@ function MemberEditForm({ memberId }: { memberId: number }) {
     busyRef.current = true
     setSaving(true)
     try {
-      const result = await updateMember(memberId, buildMemberUpdateBody({ name, email, phone, companyName, role }))
+      const body = buildMemberUpdateBody({ name, email, phone, companyName, role })
+      if (!body) {
+        return
+      }
+      const result = await updateMember(memberId, body)
       if (redirectOnAccessFailure(result)) {
         return
       }
@@ -227,6 +257,7 @@ function MemberEditForm({ memberId }: { memberId: number }) {
   const knownRole = MEMBER_ROLE_OPTIONS.some((option) => option.value === role)
   const showDeactivate = canDeactivateMember(status)
   const showActivate = canActivateMember(status)
+  const showStoredReason = status === 'INACTIVE' && Boolean(deactivationReason)
 
   return (
     <section className="admin-edit-panel" aria-labelledby="member-edit-title">
@@ -291,6 +322,11 @@ function MemberEditForm({ memberId }: { memberId: number }) {
             </select>
           </label>
           {fieldErrors.role ? <p className="admin-field-error">{fieldErrors.role}</p> : null}
+          {showStoredReason ? (
+            <p className="admin-edit-note" role="status">
+              비활성화 사유: {deactivationReason}
+            </p>
+          ) : null}
           {formMessage ? (
             <p className="admin-message" role="alert">
               {formMessage}
@@ -329,6 +365,47 @@ function MemberEditForm({ memberId }: { memberId: number }) {
           <div className="admin-dialog" role="dialog" aria-modal="true" aria-labelledby="member-deactivate-title">
             <h2 id="member-deactivate-title">{MEMBER_DEACTIVATE_TITLE}</h2>
             <p>{MEMBER_DEACTIVATE_MESSAGE}</p>
+            <fieldset className="admin-deactivate-reasons" disabled={statusActing}>
+              <legend>비활성화 사유</legend>
+              {MEMBER_DEACTIVATION_REASONS.map((reason) => (
+                <label key={reason.code} className="admin-deactivate-reason">
+                  <input
+                    type="radio"
+                    name="member-deactivation-reason"
+                    value={reason.code}
+                    checked={reasonCode === reason.code}
+                    onChange={() => {
+                      setReasonCode(reason.code)
+                      setReasonError('')
+                      if (reason.code !== 'OTHER') {
+                        setReasonDetail('')
+                      }
+                    }}
+                  />
+                  {reason.label}
+                </label>
+              ))}
+            </fieldset>
+            {reasonCode === 'OTHER' ? (
+              <label className="admin-deactivate-other">
+                기타 사유
+                <textarea
+                  value={reasonDetail}
+                  rows={3}
+                  maxLength={200}
+                  disabled={statusActing}
+                  onChange={(event) => {
+                    setReasonDetail(event.target.value)
+                    setReasonError('')
+                  }}
+                />
+              </label>
+            ) : null}
+            {reasonError ? (
+              <p className="admin-message" role="alert">
+                {reasonError}
+              </p>
+            ) : null}
             {statusMessage ? (
               <p className="admin-message" role="alert">
                 {statusMessage}
@@ -346,7 +423,7 @@ function MemberEditForm({ memberId }: { memberId: number }) {
               <button
                 type="button"
                 className="admin-edit-deactivate"
-                disabled={!canConfirmMemberDeactivate(true, statusActing, status)}
+                disabled={!canConfirmMemberDeactivate(true, statusActing, status, reasonCode, reasonDetail)}
                 onClick={confirmDeactivate}
               >
                 {statusActing ? '비활성화 중' : MEMBER_DEACTIVATE_CONFIRM}

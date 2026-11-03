@@ -45,6 +45,10 @@ export async function logout() {
   return apiRequest<void>('/api/logout', { method: 'POST' })
 }
 
+export function clearClientAuthState() {
+  sessionStorage.removeItem(RESTRICTION_KEY)
+}
+
 export function saveRestriction(error: ApiError) {
   const value: AccessRestriction = {
     message: error.message,
