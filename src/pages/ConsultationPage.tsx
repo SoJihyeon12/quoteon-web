@@ -758,6 +758,7 @@ export default function ConsultationPage({
             value={productKeyword}
             onChange={(event) => setProductKeyword(event.target.value)}
           />
+          <button type="submit">검색</button>
         </form>
         <button
           type="button"
