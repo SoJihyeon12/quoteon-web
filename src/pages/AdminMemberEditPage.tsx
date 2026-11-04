@@ -263,8 +263,8 @@ function MemberEditForm({ memberId }: { memberId: number }) {
     <section className="admin-edit-panel" aria-labelledby="member-edit-title">
       <div className="admin-edit-head">
         <h1 id="member-edit-title">사용자 수정</h1>
-        <button type="button" className="admin-edit-close" onClick={closeForm} disabled={busy}>
-          닫기
+        <button type="button" className="admin-edit-close" aria-label="닫기" onClick={closeForm} disabled={busy}>
+          ×
         </button>
       </div>
       {loadState === 'loading' ? <p role="status">회원 정보를 불러오는 중입니다.</p> : null}

@@ -12,7 +12,6 @@ import {
   ADMIN_PRODUCT_NEW_PATH,
   ADMIN_PRODUCTS_PATH,
   adminProductDetailPath,
-  adminProductEditPath,
 } from '../adminMenu.ts'
 import { adminErrorMessage } from '../adminMemberList.ts'
 import { fetchAdminProducts } from '../api/adminProducts.ts'
@@ -256,16 +255,6 @@ function ProductList() {
                             }}
                           >
                             상세 보기
-                          </a>
-                          <a
-                            className="admin-edit-link"
-                            href={adminProductEditPath(item.id)}
-                            onClick={(event) => {
-                              event.preventDefault()
-                              navigate(adminProductEditPath(item.id))
-                            }}
-                          >
-                            수정
                           </a>
                         </div>
                       </td>

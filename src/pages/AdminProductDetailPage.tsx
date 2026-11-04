@@ -78,7 +78,17 @@ function ProductDetail({ productId }: { productId: number }) {
           <>
             <div className="admin-product-panel-head">
               <h2 id="product-detail-title">{product.name}</h2>
-              <p className="admin-product-status">{productStatusLabel(product.status)}</p>
+              <div className="admin-product-sale">
+                <p className="admin-product-status">{productStatusLabel(product.status)}</p>
+                <button
+                  type="button"
+                  className="admin-edit-close"
+                  aria-label="닫기"
+                  onClick={() => navigate(ADMIN_PRODUCTS_PATH)}
+                >
+                  ×
+                </button>
+              </div>
             </div>
             <dl className="admin-product-fields">
               <div>
@@ -123,7 +133,7 @@ function ProductDetail({ productId }: { productId: number }) {
                 ))}
               </div>
             </div>
-            <div className="admin-category-form-actions">
+            <div className="admin-category-form-actions admin-product-form-actions">
               <button type="button" onClick={() => navigate(ADMIN_PRODUCTS_PATH)}>
                 닫기
               </button>

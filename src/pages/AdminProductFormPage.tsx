@@ -547,7 +547,7 @@ function ProductForm({ productId }: { productId: number | null }) {
               )}
             </div>
           ) : null}
-          <button type="button" className="admin-edit-close" onClick={closeForm} disabled={locked}>닫기</button>
+          <button type="button" className="admin-edit-close" aria-label="닫기" onClick={closeForm} disabled={locked}>×</button>
         </div>
         {loadState === 'loading' ? <p role="status">제품 정보를 불러오는 중입니다.</p> : null}
         {loadState === 'error' ? <p className="admin-message" role="alert">{loadMessage}</p> : null}
@@ -625,7 +625,7 @@ function ProductForm({ productId }: { productId: number | null }) {
               </div>
             </div>
             {formMessage ? <p className="admin-message" role="alert">{formMessage}</p> : null}
-            <div className={productId === null ? 'admin-category-form-actions' : 'admin-category-form-actions admin-product-form-actions'}>
+            <div className="admin-category-form-actions admin-product-form-actions">
               {productId !== null ? (
                 <button
                   type="button"
