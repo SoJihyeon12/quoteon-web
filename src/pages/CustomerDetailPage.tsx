@@ -153,6 +153,14 @@ export default function CustomerDetailPage({
       >
         <div className="quote-heading">
           <h1 id="customer-detail-title">{editing ? '고객 정보 수정' : '고객 상세'}</h1>
+          <button
+            type="button"
+            className="dialog-close"
+            aria-label="닫기"
+            onClick={() => navigate(editing ? customerDetailPath(customerId) : '/customers')}
+          >
+            ×
+          </button>
         </div>
         {viewState === 'loading' ? (
           <p className="quote-empty" role="status">

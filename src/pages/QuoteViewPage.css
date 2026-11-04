@@ -8,11 +8,33 @@
   margin-top: 16px;
 }
 
+.quote-view-panel .quote-heading {
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .quote-view-actions {
+  position: absolute;
+  left: 50%;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  transform: translateX(-50%);
+}
+
+.quote-view-close {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: var(--qo-color-muted);
+  font: inherit;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .quote-sent-notice {

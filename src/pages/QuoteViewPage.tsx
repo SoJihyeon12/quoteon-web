@@ -169,10 +169,13 @@ export default function QuoteViewPage({ quoteId }: { quoteId: number }) {
                 </a>
               ) : null}
               <a className="quote-create quote-rewrite" href={quoteRewritePath(quote.id)}>
-                견적서 재작성
+                재견적
               </a>
             </div>
           ) : null}
+          <a className="quote-view-close" href="/quotes/my" aria-label="닫기">
+            ×
+          </a>
         </div>
         {viewState === 'ready' && quote && sentQuoteChangeNotice(quote.status) ? (
           <p className="quote-sent-notice" role="status">

@@ -228,8 +228,8 @@ a.customer-pick.customer-list-quote {
 }
 
 .customer-detail-panel {
-  width: min(100%, 880px);
-  max-width: 880px;
+  width: min(100%, 720px);
+  max-width: 720px;
   margin: 28px auto;
   padding: 28px 32px 32px;
   border: 1px solid var(--qo-color-border);
@@ -244,7 +244,16 @@ a.customer-pick.customer-list-quote {
 }
 
 .customer-detail-panel .quote-heading {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 8px;
+}
+
+.customer-detail-panel .quote-heading .dialog-close {
+  margin-left: auto;
 }
 
 .customer-detail {
